@@ -1,59 +1,122 @@
 <script setup lang="ts">
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Activity, AlertOctagon, CheckCircle2, FileText } from 'lucide-vue-next';
 
-const logoutForm = useForm({});
 const page = usePage();
-
-// Pull injected permissions cleanly from middleware 
 const permissions = computed(() => page.props.auth.permissions);
+const user = computed(() => page.props.auth.user);
 
-const submitLogout = () => {
-    logoutForm.post('/logout');
-};
+const breadcrumbs = [
+    {
+        title: 'Dashboard',
+        href: '/dashboard',
+    },
+];
+
+const cards = [
+    {
+        title: 'Total Incidents',
+        value: '---', // Placeholder for widget data
+        description: 'Last 30 days',
+        icon: FileText,
+        colorClass: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',
+    },
+    {
+        title: 'Active Critical',
+        value: '---',
+        description: 'Requiring immediate triage',
+        icon: AlertOctagon,
+        colorClass: 'text-red-500 bg-red-50 dark:bg-red-900/20',
+    },
+    {
+        title: 'Resolved Cases',
+        value: '---',
+        description: 'Compared to previous month',
+        icon: CheckCircle2,
+        colorClass: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
+    },
+    {
+        title: 'Open Investigations',
+        value: '---',
+        description: 'Assigned to your team',
+        icon: Activity,
+        colorClass: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
+    },
+];
 </script>
 
 <template>
     <Head title="Dashboard" />
 
-    <div class="min-h-screen bg-gray-100 p-8 dark:bg-gray-900">
-        <div class="mx-auto max-w-7xl rounded-xl bg-white p-6 shadow dark:bg-gray-800">
-            <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold dark:text-white">CSIRT Dashboard</h1>
-                <form @submit.prevent="submitLogout">
-                    <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
-                        Log out
-                    </button>
-                </form>
-            </div>
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div class="flex h-full flex-1 flex-col gap-6 p-6">
             
-            <p class="mt-4 text-gray-600 dark:text-gray-400">
-                You are securely logged into the internal response system.
-            </p>
+            <!-- Welcome Header Section -->
+            <div class="flex flex-col gap-2">
+                <h2 class="text-3xl font-bold tracking-tight">Welcome back, {{ user.name }}</h2>
+                <p class="text-muted-foreground text-sm">
+                    Here's a quick overview of the CSIRT system status and pending actionable items.
+                </p>
+            </div>
 
-            <!-- Role-based UI Sections -->
-            <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <!-- Everyone (Viewers/Staff) -->
-                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-                    <h3 class="font-semibold dark:text-gray-200">Incident Reports</h3>
-                    <p class="mt-1 text-sm text-gray-500">View current active incidents and reports.</p>
-                    <button class="mt-3 text-sm font-medium text-blue-600 hover:text-blue-500">View Dashboard &rarr;</button>
-                </div>
-
-                <!-- CSIRT (Manage Reports) -->
-                <div v-if="permissions?.can_manage_reports" class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/30 dark:bg-blue-900/10">
-                    <h3 class="font-semibold text-blue-800 dark:text-blue-300">CSIRT Operations</h3>
-                    <p class="mt-1 text-sm text-blue-600 dark:text-blue-400">Create, investigate, and manage incidents.</p>
-                    <button class="mt-3 text-sm font-medium text-blue-700 hover:text-blue-600 dark:text-blue-300">Open Workbench &rarr;</button>
-                </div>
-
-                <!-- Admin (Full Access) -->
-                <div v-if="permissions?.is_admin" class="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-900/30 dark:bg-purple-900/10">
-                    <h3 class="font-semibold text-purple-800 dark:text-purple-300">Administration</h3>
-                    <p class="mt-1 text-sm text-purple-600 dark:text-purple-400">Manage users, roles, and master data.</p>
-                    <button class="mt-3 text-sm font-medium text-purple-700 hover:text-purple-600 dark:text-purple-300">System Config &rarr;</button>
+            <!-- Future KPI Widgets -->
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <div 
+                    v-for="(card, index) in cards" 
+                    :key="index"
+                    class="rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md dark:border-gray-800"
+                >
+                    <div class="flex items-center gap-4">
+                        <div :class="['flex h-12 w-12 shrink-0 items-center justify-center rounded-lg', card.colorClass]">
+                            <component :is="card.icon" class="h-6 w-6" />
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="text-sm font-medium text-muted-foreground">{{ card.title }}</h3>
+                            <div class="text-2xl font-bold tracking-tight">{{ card.value }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Middle Main Grids -->
+            <div class="grid flex-1 gap-6 lg:grid-cols-3">
+                
+                <!-- Left Chart Area -->
+                <div class="col-span-1 lg:col-span-2 rounded-xl border bg-card shadow-sm dark:border-gray-800">
+                    <div class="flex h-full flex-col p-6">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h3 class="font-semibold tracking-tight">Incident Trends</h3>
+                        </div>
+                        <!-- Chart Placeholder Widget -->
+                        <div class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50">
+                            <div class="flex flex-col items-center gap-2 text-center">
+                                <Activity class="h-8 w-8 text-gray-400 opacity-50" />
+                                <p class="text-sm text-gray-500">Trend chart widget area pending final data bindings</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Recent Activity Feed -->
+                <div class="col-span-1 rounded-xl border bg-card shadow-sm dark:border-gray-800">
+                    <div class="flex h-full flex-col p-6">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h3 class="font-semibold tracking-tight">Recent Activity</h3>
+                        </div>
+                        <!-- Activity Feed Placeholder -->
+                        <div class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50">
+                            <div class="flex flex-col items-center gap-2 text-center p-4">
+                                <FileText class="h-8 w-8 text-gray-400 opacity-50" />
+                                <p class="text-sm text-gray-500">Activity stream layout ready</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
-    </div>
+    </AppLayout>
 </template>
