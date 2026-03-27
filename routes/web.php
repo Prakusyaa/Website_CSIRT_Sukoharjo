@@ -23,4 +23,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/inbox', function () {
         return Inertia::render('Inbox');
     })->name('inbox');
+
+    Route::resource('incidents', \App\Http\Controllers\IncidentController::class);
 });
