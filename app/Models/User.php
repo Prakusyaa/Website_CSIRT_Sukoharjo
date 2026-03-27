@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\RoleLevel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -59,6 +60,42 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Check if the user meets or exceeds a defined minimum role level.
+     */
+    public function hasMinLevel(RoleLevel $level): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        return $this->role->level >= $level->value;
+    }
+
+    /**
+     * Check if the user has full unrestricted administrative capabilities.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasMinLevel(RoleLevel::ADMIN);
+    }
+
+    /**
+     * Check if the user is acting functionally as a CSIRT member or higher.
+     */
+    public function isCSIRT(): bool
+    {
+        return $this->hasMinLevel(RoleLevel::CSIRT);
+    }
+
+    /**
+     * Check if the user is standard internal staff or tracking.
+     */
+    public function isStaff(): bool
+    {
+        return $this->hasMinLevel(RoleLevel::STAFF);
     }
 
     /**
