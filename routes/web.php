@@ -25,4 +25,8 @@ Route::middleware(['auth'])->group(function () {
     })->name('inbox');
 
     Route::resource('incidents', \App\Http\Controllers\IncidentController::class);
+    
+    // Secure Evidence Download Endpoint
+    Route::get('/incidents/{incident}/attachments/{attachment}/download', [\App\Http\Controllers\AttachmentController::class, 'download'])
+        ->name('incidents.attachments.download');
 });

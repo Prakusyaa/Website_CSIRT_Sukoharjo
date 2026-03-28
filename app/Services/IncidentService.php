@@ -72,11 +72,11 @@ class IncidentService
 
         $incident = Report::create($data);
         
-        // Ensure robustly persisted disk binaries map seamlessly with Attachment relationships
+        // Ensure robustly persisted disk binaries map seamlessly with Attachment relationships preventing public-facing URL exposures natively
         if (!empty($attachments)) {
             foreach ($attachments as $file) {
                 if ($file->isValid()) {
-                    $path = $file->store('incidents/' . $incident->id, 'public');
+                    $path = $file->store('incidents/' . $incident->id, 'local');
                     
                     \App\Models\Attachment::create([
                         'report_id' => $incident->id,

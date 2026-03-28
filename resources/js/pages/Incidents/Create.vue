@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onUnmounted } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Shield, AlertCircle, Loader2, User, Mail, Briefcase } from 'lucide-vue-next';
+import { Shield, AlertCircle, Loader2, User, Mail, Briefcase, X, File as FileIcon, Image as ImageIcon } from 'lucide-vue-next';
 
 interface Category {
     id: number;
@@ -53,11 +53,66 @@ const form = useForm({
 });
 
 // Reactively lock file binary arrays ensuring direct submission capabilities
+const isDragging = ref(false);
+const previews = ref<Map<File, string>>(new Map());
+
+onUnmounted(() => {
+    // Clean up memory leaks from ObjectURLs when unmounting 
+    previews.value.forEach(url => URL.revokeObjectURL(url));
+});
+
+const getPreviewSource = (file: File) => {
+    if (file.type.startsWith('image/')) {
+        if (!previews.value.has(file)) {
+            previews.value.set(file, URL.createObjectURL(file));
+        }
+        return previews.value.get(file);
+    }
+    return undefined;
+};
+
+const addFiles = (files: File[]) => {
+    // Basic local boundary enforcing 5 limit before backend validates it safely
+    const remainingSlots = 5 - form.attachments.length;
+    if (remainingSlots > 0) {
+        form.attachments.push(...files.slice(0, remainingSlots));
+    }
+};
+
+const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    isDragging.value = true;
+};
+
+const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault();
+    isDragging.value = false;
+};
+
+const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    isDragging.value = false;
+    if (e.dataTransfer?.files) {
+        addFiles(Array.from(e.dataTransfer.files));
+    }
+};
+
 const handleFileChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
     if (target.files) {
-        form.attachments = Array.from(target.files);
+        addFiles(Array.from(target.files));
     }
+    // Reset so same file can trigger change event if removed and re-added
+    target.value = '';
+};
+
+const removeFile = (index: number) => {
+    const file = form.attachments[index];
+    if (previews.value.has(file)) {
+        URL.revokeObjectURL(previews.value.get(file)!);
+        previews.value.delete(file);
+    }
+    form.attachments.splice(index, 1);
 };
 
 // Watch mode closely purging the inactive field so rigid constraints never conflict remotely
@@ -273,10 +328,21 @@ const submit = () => {
                             <label for="attachments" class="text-sm font-medium leading-none">
                                 Evidence & Logs (Optional)
                             </label>
-                            <div class="flex items-center justify-center w-full">
-                                <label for="attachments" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-950/40 dark:border-gray-800 dark:hover:bg-gray-900/60 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-muted-foreground">
-                                        <svg class="w-8 h-8 mb-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
+                            
+                            <!-- Dynamic Drag and Drop Zone -->
+                            <div class="flex items-center justify-center w-full relative">
+                                <label 
+                                    for="attachments" 
+                                    class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors"
+                                    :class="isDragging ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'bg-gray-50 border-gray-300 hover:bg-gray-100 dark:bg-gray-950/40 dark:border-gray-800 dark:hover:bg-gray-900/60'"
+                                    @dragover="handleDragOver"
+                                    @dragleave="handleDragLeave"
+                                    @drop="handleDrop"
+                                >
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-muted-foreground pointer-events-none">
+                                        <svg class="w-8 h-8 mb-3" :class="isDragging ? 'text-primary' : ''" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                        </svg>
                                         <p class="mb-2 text-sm"><span class="font-semibold">Click to upload</span> or drag and drop</p>
                                         <p class="text-xs">PNG, JPG, PDF, TXT, CSV, ZIP (Max 5 Files, 10MB each)</p>
                                     </div>
@@ -291,13 +357,33 @@ const submit = () => {
                                 </label>
                             </div>
                             
-                            <!-- Render selected files securely dynamically -->
-                            <ul v-if="form.attachments.length > 0" class="mt-4 space-y-2">
-                                <li v-for="(file, index) in form.attachments" :key="index" class="flex items-center justify-between p-2 px-3 text-sm rounded-md bg-muted/50 border dark:border-gray-800">
-                                    <span class="truncate font-medium">{{ file.name }}</span>
-                                    <span class="text-xs text-muted-foreground shrink-0 ml-4 font-mono">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
-                                </li>
-                            </ul>
+                            <!-- Render selected files securely dynamically with previews -->
+                            <div v-if="form.attachments.length > 0" class="mt-4 grid gap-3 sm:grid-cols-2">
+                                <div v-for="(file, index) in form.attachments" :key="index" class="relative flex items-center gap-3 p-3 text-sm rounded-md bg-muted/50 border dark:border-gray-800 pr-10 hover:bg-muted/80 transition-colors group">
+                                    
+                                    <!-- Thumbnail or Icon Wrapper -->
+                                    <div class="shrink-0 h-10 w-10 flex items-center justify-center overflow-hidden rounded bg-background border border-border shadow-sm">
+                                        <img v-if="getPreviewSource(file)" :src="getPreviewSource(file)" alt="Preview" class="h-full w-full object-cover select-none" />
+                                        <ImageIcon v-else-if="file.type.startsWith('image/')" class="h-5 w-5 text-muted-foreground" />
+                                        <FileIcon v-else class="h-5 w-5 text-muted-foreground" />
+                                    </div>
+
+                                    <div class="flex flex-col overflow-hidden leading-tight">
+                                        <span class="truncate font-medium text-foreground" :title="file.name">{{ file.name }}</span>
+                                        <span class="text-xs text-muted-foreground font-mono mt-0.5">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
+                                    </div>
+
+                                    <!-- Delete File Capability -->
+                                    <button 
+                                        type="button" 
+                                        @click="removeFile(index)"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/40 transition-colors"
+                                        title="Remove file"
+                                    >
+                                        <X class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
 
                             <!-- Errors scoped to files dynamically -->
                             <p v-if="form.errors.attachments" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
