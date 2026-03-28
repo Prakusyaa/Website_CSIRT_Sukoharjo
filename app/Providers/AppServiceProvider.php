@@ -26,6 +26,13 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
 
+        // Register central observer on critical entities automating Audit traces
+        \App\Models\Report::observe(\App\Observers\AuditLogObserver::class);
+        \App\Models\User::observe(\App\Observers\AuditLogObserver::class);
+        \App\Models\Attachment::observe(\App\Observers\AuditLogObserver::class);
+        \App\Models\Category::observe(\App\Observers\AuditLogObserver::class);
+        \App\Models\Severity::observe(\App\Observers\AuditLogObserver::class);
+
         Gate::before(function ($user, $ability) {
             if ($user->isAdmin()) {
                 return true;
