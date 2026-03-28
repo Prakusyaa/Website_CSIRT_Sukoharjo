@@ -3,9 +3,8 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
-class IncidentResource extends JsonResource
+class IncidentResource extends BaseResource
 {
     /**
      * Transform the resource into an array standardized for frontend and API consumption.

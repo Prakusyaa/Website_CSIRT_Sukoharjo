@@ -42,17 +42,11 @@ class AuthController extends Controller
         // Token expires in 7 days natively.
         $token = $user->createToken('api-token', ['*'], now()->addDays(7));
 
-        return response()->json([
-            'token' => $token->plainTextToken,
+        return \App\Support\ApiResponse::success([
+            'token'      => $token->plainTextToken,
             'expires_at' => $token->accessToken->expires_at,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'username' => $user->username,
-                'role_id' => $user->role_id,
-            ],
-        ]);
+            'user'       => new \App\Http\Resources\UserResource($user->load('role')),
+        ], 'Authentication successful.');
     }
 
     /**

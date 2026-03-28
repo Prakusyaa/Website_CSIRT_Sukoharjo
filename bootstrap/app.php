@@ -25,9 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
 
-        // Register 'role' as a named middleware alias usable in route definitions
+        // Register named middleware aliases for use in route definitions
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'role'      => \App\Http\Middleware\EnsureUserHasRole::class,
+            'api.admin' => \App\Http\Middleware\EnsureApiUserIsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
