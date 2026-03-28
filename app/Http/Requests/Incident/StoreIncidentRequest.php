@@ -26,6 +26,7 @@ class StoreIncidentRequest extends FormRequest
             'description' => ['required', 'string'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'severity_id' => ['nullable', 'integer', 'exists:severities,id'],
+            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
             'reporter_id' => ['nullable', 'integer', 'exists:users,id'],
             'reporter_email' => ['nullable', 'email', 'max:255'],
         ];

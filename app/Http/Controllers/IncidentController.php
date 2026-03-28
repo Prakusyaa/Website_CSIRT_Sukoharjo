@@ -45,6 +45,9 @@ class IncidentController extends Controller
             'categories' => \App\Models\Category::select('id', 'name')->get(),
             'severities' => \App\Models\Severity::select('id', 'name', 'level')->orderBy('level')->get(),
             'users' => \App\Models\User::select('id', 'name', 'email')->where('is_active', true)->get(),
+            'csirtUsers' => \App\Models\User::whereHas('role', function($q) {
+                $q->where('level', '>=', \App\Enums\RoleLevel::CSIRT->value);
+            })->where('is_active', true)->select('id', 'name')->get(),
         ]);
     }
 

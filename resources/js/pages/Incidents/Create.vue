@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref, watch, computed } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Shield, AlertCircle, Loader2, User, Mail } from 'lucide-vue-next';
+import { Shield, AlertCircle, Loader2, User, Mail, Briefcase } from 'lucide-vue-next';
 
 interface Category {
     id: number;
@@ -25,7 +25,12 @@ const props = defineProps<{
     categories: Category[];
     severities: Severity[];
     users: UserProfile[];
+    csirtUsers: { id: number; name: string }[];
 }>();
+
+const page = usePage();
+const permissions = computed(() => page.props.auth.permissions);
+const currentUser = computed(() => page.props.auth.user);
 
 const breadcrumbs = [
     { title: 'Incidents', href: '/incidents' },
@@ -43,6 +48,7 @@ const form = useForm({
     severity_id: '' as number | '',
     reporter_id: '' as number | '',
     reporter_email: '',
+    assigned_to: '' as number | '',
 });
 
 // Watch mode closely purging the inactive field so rigid constraints never conflict remotely
@@ -253,17 +259,62 @@ const submit = () => {
                             </p>
                         </div>
                     </div>
-                    
-                    <div class="flex items-center justify-end px-6 py-4 border-t bg-muted/40 dark:border-gray-800">
-                        <button
-                            type="submit"
-                            :disabled="form.processing"
-                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2"
-                        >
-                            <Loader2 v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
-                            Log Incident
-                        </button>
+                </div>
+
+                <!-- Assignment Section (Restricted to CSIRT/Admin) -->
+                <div v-if="permissions.can_manage_reports" class="rounded-xl border border-indigo-200 bg-indigo-50/30 shadow-sm dark:border-indigo-900/30 dark:bg-indigo-900/10">
+                    <div class="border-b border-indigo-100 px-6 py-4 dark:border-indigo-900/50">
+                        <div class="flex items-center gap-2">
+                            <Briefcase class="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                            <h3 class="text-lg font-medium text-indigo-900 dark:text-indigo-200">Incident Assignment Tracking</h3>
+                        </div>
+                        <p class="text-sm text-indigo-600/80 dark:text-indigo-300">Delegate this security incident securely to an active responder (Internal).</p>
                     </div>
+
+                    <div class="p-6 space-y-4">
+                        <div class="flex flex-col sm:flex-row gap-4 sm:items-end">
+                            <div class="space-y-2 flex-1 relative w-full">
+                                <label for="assigned_to" class="text-sm font-medium leading-none text-indigo-900 dark:text-indigo-300">
+                                    Primary Handler / Assignee
+                                </label>
+                                <select
+                                    id="assigned_to"
+                                    v-model="form.assigned_to"
+                                    class="flex h-10 w-full items-center justify-between rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-950 dark:border-indigo-800"
+                                >
+                                    <option value="" selected>Unassigned (Pending Triage)</option>
+                                    <option v-for="handler in csirtUsers" :key="handler.id" :value="handler.id">
+                                        {{ handler.name }} 
+                                        {{ currentUser?.id === handler.id ? '(You)' : '' }}
+                                    </option>
+                                </select>
+                                <p v-if="form.errors.assigned_to" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                    <AlertCircle class="h-3 w-3" /> {{ form.errors.assigned_to }}
+                                </p>
+                            </div>
+                            
+                            <!-- One-Click Self Assign -->
+                            <button
+                                type="button"
+                                @click="form.assigned_to = currentUser?.id"
+                                class="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-indigo-300 bg-indigo-100 px-4 py-2 text-sm font-medium text-indigo-800 transition-colors hover:bg-indigo-200 dark:border-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 dark:hover:bg-indigo-800/80 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                Self-Assign Incident
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Footer -->
+                <div class="flex items-center justify-end px-6 py-4 border-t bg-muted/40 dark:border-gray-800 rounded-xl rounded-t-none -mt-6">
+                    <button
+                        type="submit"
+                        :disabled="form.processing"
+                        class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2"
+                    >
+                        <Loader2 v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
+                        Log Incident
+                    </button>
                 </div>
             </form>
             
