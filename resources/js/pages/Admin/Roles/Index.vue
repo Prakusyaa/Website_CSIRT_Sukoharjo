@@ -75,15 +75,15 @@ const performDelete = (role: Role) => {
             </div>
 
             <!-- Flash messages -->
-            <div v-if="$page.props.flash?.success"
+            <div v-if="($page.props.flash as any)?.success"
                 class="flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4 dark:bg-emerald-950/40 dark:border-emerald-900">
                 <CheckCircle2 class="h-5 w-5 text-emerald-500 shrink-0" />
-                <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">{{ $page.props.flash.success }}</p>
+                <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">{{ ($page.props.flash as any).success }}</p>
             </div>
-            <div v-if="$page.props.errors?.error"
+            <div v-if="($page.props.errors as any)?.error"
                 class="flex items-center gap-3 rounded-md border border-rose-200 bg-rose-50 p-4 dark:bg-rose-950/40 dark:border-rose-900">
                 <ShieldAlert class="h-5 w-5 text-rose-500 shrink-0" />
-                <p class="text-sm font-medium text-rose-800 dark:text-rose-200">{{ $page.props.errors.error }}</p>
+                <p class="text-sm font-medium text-rose-800 dark:text-rose-200">{{ ($page.props.errors as any).error }}</p>
             </div>
 
             <!-- Protected levels explainer -->

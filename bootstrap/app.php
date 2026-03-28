@@ -21,6 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            // Silently log out any session belonging to a deactivated account on every web request
+            \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
+
+        // Register 'role' as a named middleware alias usable in route definitions
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
