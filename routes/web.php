@@ -36,6 +36,14 @@ Route::middleware(['auth'])->group(function () {
         'update'  => 'admin.users.update',
         'destroy' => 'admin.users.destroy',
     ]);
+    Route::resource('admin/roles', \App\Http\Controllers\Admin\RoleController::class)->except(['show'])->names([
+        'index'   => 'admin.roles.index',
+        'create'  => 'admin.roles.create',
+        'store'   => 'admin.roles.store',
+        'edit'    => 'admin.roles.edit',
+        'update'  => 'admin.roles.update',
+        'destroy' => 'admin.roles.destroy',
+    ]);
     
     // Secure Evidence Download Endpoint
     Route::get('/incidents/{incident}/attachments/{attachment}/download', [\App\Http\Controllers\AttachmentController::class, 'download'])
