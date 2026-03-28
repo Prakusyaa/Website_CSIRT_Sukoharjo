@@ -26,9 +26,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('incidents', \App\Http\Controllers\IncidentController::class);
     
-    // Administrative Systems
-    Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
-    
     // Secure Evidence Download Endpoint
     Route::get('/incidents/{incident}/attachments/{attachment}/download', [\App\Http\Controllers\AttachmentController::class, 'download'])
         ->name('incidents.attachments.download');
