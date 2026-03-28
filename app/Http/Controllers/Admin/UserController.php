@@ -16,8 +16,6 @@ class UserController extends Controller
 {
     public function index(Request $request): Response
     {
-        if (! $request->user()->isAdmin()) { abort(403); }
-
         $users = User::with('role')->orderBy('id', 'desc')->paginate(15);
 
         return Inertia::render('Admin/Users/Index', [
@@ -27,16 +25,13 @@ class UserController extends Controller
 
     public function create(Request $request): Response
     {
-        if (! $request->user()->isAdmin()) { abort(403); }
-
         return Inertia::render('Admin/Users/Create', [
-            'roles' => Role::orderBy('level')->get(),
+            'roles' => app(\App\Services\ReferenceDataService::class)->getRoles(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        if (! $request->user()->isAdmin()) { abort(403); }
 
         $validated = $request->validate([
             'name'      => 'required|string|max:255',
@@ -57,17 +52,14 @@ class UserController extends Controller
 
     public function edit(Request $request, User $user): Response
     {
-        if (! $request->user()->isAdmin()) { abort(403); }
-
         return Inertia::render('Admin/Users/Edit', [
             'user'  => $user,
-            'roles' => Role::orderBy('level')->get(),
+            'roles' => app(\App\Services\ReferenceDataService::class)->getRoles(),
         ]);
     }
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        if (! $request->user()->isAdmin()) { abort(403); }
 
         $validated = $request->validate([
             'name'      => 'required|string|max:255',
@@ -100,7 +92,6 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
-        if (! $request->user()->isAdmin()) { abort(403); }
 
         if ($request->user()->id === $user->id) {
             return back()->withErrors(['error' => 'You cannot delete your own account.']);

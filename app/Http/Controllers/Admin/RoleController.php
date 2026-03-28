@@ -18,16 +18,10 @@ class RoleController extends Controller
      */
     private const PROTECTED_LEVELS = [10, 50, 100];
 
-    private function guardAdmin(Request $request): void
-    {
-        if (! $request->user()->isAdmin()) {
-            abort(403, 'Role management is restricted to System Administrators.');
-        }
-    }
+
 
     public function index(Request $request): Response
     {
-        $this->guardAdmin($request);
 
         $roles = Role::withCount('users')
             ->orderBy('level', 'asc')
@@ -41,7 +35,6 @@ class RoleController extends Controller
 
     public function create(Request $request): Response
     {
-        $this->guardAdmin($request);
 
         return Inertia::render('Admin/Roles/Create', [
             'protectedLevels'  => self::PROTECTED_LEVELS,
@@ -50,7 +43,6 @@ class RoleController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->guardAdmin($request);
 
         $validated = $request->validate([
             'name'  => 'required|string|max:100|unique:roles,name',
@@ -75,7 +67,6 @@ class RoleController extends Controller
 
     public function edit(Request $request, Role $role): Response|RedirectResponse
     {
-        $this->guardAdmin($request);
 
         if (in_array($role->level, self::PROTECTED_LEVELS)) {
             return redirect()->route('admin.roles.index')
@@ -90,7 +81,6 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role): RedirectResponse
     {
-        $this->guardAdmin($request);
 
         if (in_array($role->level, self::PROTECTED_LEVELS)) {
             return back()->withErrors(['error' => 'Core system roles cannot be modified.']);
@@ -118,7 +108,6 @@ class RoleController extends Controller
 
     public function destroy(Request $request, Role $role): RedirectResponse
     {
-        $this->guardAdmin($request);
 
         if (in_array($role->level, self::PROTECTED_LEVELS)) {
             return back()->withErrors(['error' => "Core system role \"{$role->name}\" cannot be deleted."]);
