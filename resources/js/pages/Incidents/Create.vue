@@ -1,0 +1,272 @@
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Shield, AlertCircle, Loader2, User, Mail } from 'lucide-vue-next';
+
+interface Category {
+    id: number;
+    name: string;
+}
+
+interface Severity {
+    id: number;
+    name: string;
+    level: number;
+}
+
+interface UserProfile {
+    id: number;
+    name: string;
+    email: string;
+}
+
+const props = defineProps<{
+    categories: Category[];
+    severities: Severity[];
+    users: UserProfile[];
+}>();
+
+const breadcrumbs = [
+    { title: 'Incidents', href: '/incidents' },
+    { title: 'Log Incident', href: '/incidents/create' },
+];
+
+// Reporter Mode tracking natively
+const reporterMode = ref<'internal' | 'external'>('internal');
+
+// Reusable standard validation structures pushed via API wrapper
+const form = useForm({
+    subject: '',
+    description: '',
+    category_id: '' as number | '',
+    severity_id: '' as number | '',
+    reporter_id: '' as number | '',
+    reporter_email: '',
+});
+
+// Watch mode closely purging the inactive field so rigid constraints never conflict remotely
+watch(reporterMode, (newMode) => {
+    if (newMode === 'internal') {
+        form.reporter_email = '';
+    } else {
+        form.reporter_id = '';
+    }
+});
+
+const submit = () => {
+    form.post('/incidents', {
+        preserveScroll: true,
+        onError: () => {
+            // Automatically handled by form.errors in template 
+        }
+    });
+};
+</script>
+
+<template>
+    <Head title="Log Incident" />
+
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div class="flex flex-1 flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
+            
+            <div class="flex items-center gap-4">
+                <Link href="/incidents" class="text-sm font-medium text-muted-foreground hover:text-foreground">
+                    &larr; Back
+                </Link>
+                <h2 class="text-2xl font-bold tracking-tight">Log a New Incident</h2>
+            </div>
+            
+            <form @submit.prevent="submit" class="flex flex-col gap-6">
+                <!-- Reporter Section -->
+                <div class="rounded-xl border bg-card shadow-sm dark:border-gray-800">
+                    <div class="border-b px-6 py-4 dark:border-gray-800">
+                        <div class="flex items-center gap-2">
+                            <User class="h-5 w-5 text-primary" />
+                            <h3 class="text-lg font-medium">Reporter Information</h3>
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-1">Specify who reported or raised this security incident initially.</p>
+                    </div>
+
+                    <div class="p-6 space-y-6">
+                        <!-- Mode Toggle -->
+                        <div class="flex flex-col sm:flex-row gap-4 sm:items-center">
+                            <label class="text-sm font-medium leading-none whitespace-nowrap">Reporter Source:</label>
+                            <div class="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground w-full sm:w-auto">
+                                <button 
+                                    type="button" 
+                                    @click="reporterMode = 'internal'"
+                                    :class="[
+                                        'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all w-1/2 sm:w-auto',
+                                        reporterMode === 'internal' ? 'bg-background text-foreground shadow-sm' : 'hover:bg-background/50 text-muted-foreground'
+                                    ]"
+                                >
+                                    Internal Employee
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="reporterMode = 'external'"
+                                    :class="[
+                                        'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all w-1/2 sm:w-auto',
+                                        reporterMode === 'external' ? 'bg-background text-foreground shadow-sm' : 'hover:bg-background/50 text-muted-foreground'
+                                    ]"
+                                >
+                                    External / Anonymous Email
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Inputs -->
+                        <div class="rounded-lg border border-dashed p-4 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30">
+                            <!-- Mode 1: Internal User Selection -->
+                            <div v-if="reporterMode === 'internal'" class="space-y-2">
+                                <label for="reporter_id" class="text-sm font-medium flex items-center gap-1.5">
+                                    <User class="h-4 w-4 text-muted-foreground" />
+                                    Select Active User Profile
+                                </label>
+                                <select
+                                    id="reporter_id"
+                                    v-model="form.reporter_id"
+                                    class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="" disabled>Search or select an internal user...</option>
+                                    <option v-for="user in users" :key="user.id" :value="user.id">
+                                        {{ user.name }} ({{ user.email }})
+                                    </option>
+                                </select>
+                                <p class="text-xs text-muted-foreground mt-1 select-none">Leave totally empty if you want your own account logged as the default reporter natively via the system.</p>
+                                <p v-if="form.errors.reporter_id" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                    <AlertCircle class="h-3 w-3" /> {{ form.errors.reporter_id }}
+                                </p>
+                            </div>
+
+                            <!-- Mode 2: External Email Input -->
+                            <div v-if="reporterMode === 'external'" class="space-y-2">
+                                <label for="reporter_email" class="text-sm font-medium flex items-center gap-1.5">
+                                    <Mail class="h-4 w-4 text-muted-foreground" />
+                                    External Email Address
+                                </label>
+                                <input
+                                    id="reporter_email"
+                                    v-model="form.reporter_email"
+                                    type="email"
+                                    class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    placeholder="e.g., security-alert@partner.com"
+                                />
+                                <p class="text-xs text-muted-foreground mt-1 select-none">This email will receive updates regarding the incident if external notification logic is enabled.</p>
+                                <p v-if="form.errors.reporter_email" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                    <AlertCircle class="h-3 w-3" /> {{ form.errors.reporter_email }}
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Main Details Section -->
+                <div class="rounded-xl border bg-card shadow-sm dark:border-gray-800">
+                    <div class="border-b px-6 py-4 dark:border-gray-800">
+                        <div class="flex items-center gap-2">
+                            <Shield class="h-5 w-5 text-primary" />
+                            <h3 class="text-lg font-medium">Incident Details</h3>
+                        </div>
+                        <p class="text-sm text-muted-foreground mt-1">Provide clear, actionable details describing the security event.</p>
+                    </div>
+
+                    <div class="p-6 space-y-6">
+                        <!-- Subject Field -->
+                        <div class="space-y-2">
+                            <label for="subject" class="text-sm font-medium leading-none required:after:text-destructive after:content-['*'] after:ml-0.5">
+                                Subject
+                            </label>
+                            <input
+                                id="subject"
+                                v-model="form.subject"
+                                type="text"
+                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="E.g., Unauthorized access detected on App-Server-02"
+                                required
+                            />
+                            <p v-if="form.errors.subject" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                <AlertCircle class="h-3 w-3" /> {{ form.errors.subject }}
+                            </p>
+                        </div>
+
+                        <!-- Categorization Grid -->
+                        <div class="grid gap-6 sm:grid-cols-2">
+                            <!-- Category Field -->
+                            <div class="space-y-2">
+                                <label for="category" class="text-sm font-medium leading-none">
+                                    Category Classification
+                                </label>
+                                <select
+                                    id="category"
+                                    v-model="form.category_id"
+                                    class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="" disabled>Select a category...</option>
+                                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                                        {{ category.name }}
+                                    </option>
+                                </select>
+                                <p v-if="form.errors.category_id" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                    <AlertCircle class="h-3 w-3" /> {{ form.errors.category_id }}
+                                </p>
+                            </div>
+
+                            <!-- Severity Field -->
+                            <div class="space-y-2">
+                                <label for="severity" class="text-sm font-medium leading-none">
+                                    Initial Severity Estimate
+                                </label>
+                                <select
+                                    id="severity"
+                                    v-model="form.severity_id"
+                                    class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="" disabled>Select a severity level...</option>
+                                    <option v-for="severity in severities" :key="severity.id" :value="severity.id">
+                                        {{ severity.name }}
+                                    </option>
+                                </select>
+                                <p v-if="form.errors.severity_id" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                    <AlertCircle class="h-3 w-3" /> {{ form.errors.severity_id }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Description Field -->
+                        <div class="space-y-2 mt-4">
+                            <label for="description" class="text-sm font-medium leading-none required:after:text-destructive after:content-['*'] after:ml-0.5">
+                                Description & Technical Context
+                            </label>
+                            <textarea
+                                id="description"
+                                v-model="form.description"
+                                rows="8"
+                                class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="Include logs, IP addresses, timelines, or steps to reproduce if applicable."
+                                required
+                            ></textarea>
+                            <p v-if="form.errors.description" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                <AlertCircle class="h-3 w-3" /> {{ form.errors.description }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-end px-6 py-4 border-t bg-muted/40 dark:border-gray-800">
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2"
+                        >
+                            <Loader2 v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
+                            Log Incident
+                        </button>
+                    </div>
+                </div>
+            </form>
+            
+        </div>
+    </AppLayout>
+</template>

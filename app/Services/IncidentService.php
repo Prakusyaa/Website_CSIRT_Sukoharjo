@@ -9,12 +9,36 @@ class IncidentService
 {
     /**
      * Fetch a paginated array of incidents preloaded with robust operational relationships.
+     * Supports dynamic filtering (search, status) and strict column sorting protocols.
      */
-    public function getPaginatedList(int $perPage = 15): LengthAwarePaginator
+    public function getPaginatedList(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        return Report::with(['category', 'severity', 'assignedUser', 'reporter'])
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        $query = Report::with(['category', 'severity', 'assignedUser', 'reporter']);
+
+        // Handle text-based search (Subject or Email)
+        if (!empty($filters['search'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('subject', 'like', '%' . $filters['search'] . '%')
+                  ->orWhere('reporter_email', 'like', '%' . $filters['search'] . '%');
+            });
+        }
+
+        // Handle specific status filter exactly via enum values
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        // Safe Sort Processing (whitelist sorting columns dynamically preventing injection!)
+        $sortColumn = $filters['sort'] ?? 'created_at';
+        $sortDirection = $filters['direction'] ?? 'desc';
+        
+        $allowedSorts = ['id', 'subject', 'status', 'created_at', 'severity_id'];
+        $safeSortColumn = in_array($sortColumn, $allowedSorts) ? $sortColumn : 'created_at';
+        $safeSortDirection = in_array(strtolower($sortDirection), ['asc', 'desc']) ? strtolower($sortDirection) : 'desc';
+
+        return $query->orderBy($safeSortColumn, $safeSortDirection)
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     /**

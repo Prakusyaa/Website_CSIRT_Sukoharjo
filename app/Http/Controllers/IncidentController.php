@@ -25,10 +25,12 @@ class IncidentController extends Controller
     {
         $this->authorize('viewAny', Report::class);
         
-        $incidents = $this->incidentService->getPaginatedList();
+        $filters = $request->only(['search', 'status', 'sort', 'direction']);
+        $incidents = $this->incidentService->getPaginatedList($filters);
 
         return Inertia::render('Incidents/Index', [
             'incidents' => IncidentResource::collection($incidents),
+            'filters' => $filters,
         ]);
     }
 
@@ -39,7 +41,11 @@ class IncidentController extends Controller
     {
         $this->authorize('create', Report::class);
 
-        return Inertia::render('Incidents/Create');
+        return Inertia::render('Incidents/Create', [
+            'categories' => \App\Models\Category::select('id', 'name')->get(),
+            'severities' => \App\Models\Severity::select('id', 'name', 'level')->orderBy('level')->get(),
+            'users' => \App\Models\User::select('id', 'name', 'email')->where('is_active', true)->get(),
+        ]);
     }
 
     /**
