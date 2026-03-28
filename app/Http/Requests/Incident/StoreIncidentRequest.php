@@ -29,6 +29,8 @@ class StoreIncidentRequest extends FormRequest
             'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
             'reporter_id' => ['nullable', 'integer', 'exists:users,id'],
             'reporter_email' => ['nullable', 'email', 'max:255'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf,csv,txt,zip', 'max:10240'],
         ];
     }
 }

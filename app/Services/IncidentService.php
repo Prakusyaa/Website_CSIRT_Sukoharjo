@@ -63,7 +63,32 @@ class IncidentService
             $data['reporter_id'] = $creatorId;
         }
 
+        // Extract binary arrays effectively saving to disk later
+        $attachments = [];
+        if (isset($data['attachments'])) {
+            $attachments = $data['attachments'];
+            unset($data['attachments']);
+        }
+
         $incident = Report::create($data);
+        
+        // Ensure robustly persisted disk binaries map seamlessly with Attachment relationships
+        if (!empty($attachments)) {
+            foreach ($attachments as $file) {
+                if ($file->isValid()) {
+                    $path = $file->store('incidents/' . $incident->id, 'public');
+                    
+                    \App\Models\Attachment::create([
+                        'report_id' => $incident->id,
+                        'file_name' => collect(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME))->take(255)->implode('') . '.' . $file->getClientOriginalExtension(),
+                        'file_path' => $path,
+                        'file_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
+                        'createdby' => $creatorId,
+                    ]);
+                }
+            }
+        }
         
         // TODO: Fire incident created audit event 
 

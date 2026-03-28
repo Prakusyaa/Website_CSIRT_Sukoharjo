@@ -49,7 +49,16 @@ const form = useForm({
     reporter_id: '' as number | '',
     reporter_email: '',
     assigned_to: '' as number | '',
+    attachments: [] as File[],
 });
+
+// Reactively lock file binary arrays ensuring direct submission capabilities
+const handleFileChange = (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    if (target.files) {
+        form.attachments = Array.from(target.files);
+    }
+};
 
 // Watch mode closely purging the inactive field so rigid constraints never conflict remotely
 watch(reporterMode, (newMode) => {
@@ -258,11 +267,54 @@ const submit = () => {
                                 <AlertCircle class="h-3 w-3" /> {{ form.errors.description }}
                             </p>
                         </div>
+                        
+                        <!-- Attachments Field -->
+                        <div class="space-y-2 mt-4 pt-4 border-t dark:border-gray-800">
+                            <label for="attachments" class="text-sm font-medium leading-none">
+                                Evidence & Logs (Optional)
+                            </label>
+                            <div class="flex items-center justify-center w-full">
+                                <label for="attachments" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-950/40 dark:border-gray-800 dark:hover:bg-gray-900/60 transition-colors">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-muted-foreground">
+                                        <svg class="w-8 h-8 mb-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
+                                        <p class="mb-2 text-sm"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                        <p class="text-xs">PNG, JPG, PDF, TXT, CSV, ZIP (Max 5 Files, 10MB each)</p>
+                                    </div>
+                                    <input 
+                                        id="attachments" 
+                                        type="file" 
+                                        multiple 
+                                        class="hidden" 
+                                        @change="handleFileChange" 
+                                        accept=".jpg,.jpeg,.png,.pdf,.csv,.txt,.zip" 
+                                    />
+                                </label>
+                            </div>
+                            
+                            <!-- Render selected files securely dynamically -->
+                            <ul v-if="form.attachments.length > 0" class="mt-4 space-y-2">
+                                <li v-for="(file, index) in form.attachments" :key="index" class="flex items-center justify-between p-2 px-3 text-sm rounded-md bg-muted/50 border dark:border-gray-800">
+                                    <span class="truncate font-medium">{{ file.name }}</span>
+                                    <span class="text-xs text-muted-foreground shrink-0 ml-4 font-mono">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</span>
+                                </li>
+                            </ul>
+
+                            <!-- Errors scoped to files dynamically -->
+                            <p v-if="form.errors.attachments" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                <AlertCircle class="h-3 w-3" /> {{ form.errors.attachments }}
+                            </p>
+                            <!-- Deep Array validations tracking mapped precisely -->
+                            <template v-for="(error, key) in form.errors" :key="key">
+                                <p v-if="key.toString().startsWith('attachments.')" class="text-[0.8rem] font-medium text-destructive mt-1 flex items-center gap-1">
+                                    <AlertCircle class="h-3 w-3" /> {{ error }}
+                                </p>
+                            </template>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Assignment Section (Restricted to CSIRT/Admin) -->
-                <div v-if="permissions.can_manage_reports" class="rounded-xl border border-indigo-200 bg-indigo-50/30 shadow-sm dark:border-indigo-900/30 dark:bg-indigo-900/10">
+                <div v-if="permissions?.can_manage_reports" class="rounded-xl border border-indigo-200 bg-indigo-50/30 shadow-sm dark:border-indigo-900/30 dark:bg-indigo-900/10">
                     <div class="border-b border-indigo-100 px-6 py-4 dark:border-indigo-900/50">
                         <div class="flex items-center gap-2">
                             <Briefcase class="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
