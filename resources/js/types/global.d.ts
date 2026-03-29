@@ -1,3 +1,4 @@
+import { PageProps as InertiaPageProps } from '@inertiajs/core';
 import type { Auth } from '@/types/auth';
 
 // Extend ImportMeta interface for Vite...
@@ -14,20 +15,17 @@ declare module 'vite/client' {
 }
 
 declare module '@inertiajs/core' {
-    export interface InertiaConfig {
-        sharedPageProps: {
-            name: string;
-            auth: Auth;
-            sidebarOpen: boolean;
-            [key: string]: unknown;
+    interface PageProps extends InertiaPageProps {
+        name?: string;
+        auth: Auth;
+        sidebarOpen?: boolean;
+        flash?: {
+            success?: string | null;
+            error?: string | null;
         };
-    }
-}
-
-declare module 'vue' {
-    interface ComponentCustomProperties {
-        $inertia: typeof Router;
-        $page: Page;
-        $headManager: ReturnType<typeof createHeadManager>;
+        errors?: Record<string, string> & {
+            error?: string | null;
+        };
+        [key: string]: unknown;
     }
 }

@@ -19,7 +19,7 @@ class IncidentResource extends BaseResource
             'description' => $this->description,
             'status' => $this->status,
             'reporter_email' => $this->reporter_email,
-            
+
             // Loaded Relationships
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id,
@@ -43,6 +43,12 @@ class IncidentResource extends BaseResource
                 'id' => $this->creator->id,
                 'name' => $this->creator->name,
             ]),
+            'attachments' => $this->whenLoaded('attachments', fn () => $this->attachments->map(fn ($a) => [
+                'id' => $a->id,
+                'file_name' => $a->file_name,
+                'file_type' => $a->file_type,
+                'file_size' => $a->file_size,
+            ])->values()->all()),
 
             // ISO UTC Timestamps mapped functionally
             'created_at' => $this->created_at?->toISOString(),

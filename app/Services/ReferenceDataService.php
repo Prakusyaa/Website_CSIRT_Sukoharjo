@@ -38,11 +38,21 @@ class ReferenceDataService
 
     /**
      * Retrieve all system roles, leveraging cache.
+     *
+     * @return list<array{id: int, name: string, level: int}>
      */
-    public function getRoles()
+    public function getRoles(): array
     {
-        return Cache::remember('reference.roles', self::CACHE_TTL, function () {
-            return Role::orderBy('level')->get();
+        return Cache::remember('reference.roles.v2', self::CACHE_TTL, function () {
+            return Role::query()
+                ->orderBy('level')
+                ->get(['id', 'name', 'level'])
+                ->map(fn (Role $role) => [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'level' => $role->level,
+                ])
+                ->all();
         });
     }
 
@@ -55,5 +65,6 @@ class ReferenceDataService
         Cache::forget('reference.categories');
         Cache::forget('reference.severities');
         Cache::forget('reference.roles');
+        Cache::forget('reference.roles.v2');
     }
 }

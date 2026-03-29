@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+
+import AdminAccessNav from '@/components/AdminAccessNav.vue';
 import { Users, Plus, Shield, Pencil, CheckCircle2, ShieldAlert } from 'lucide-vue-next';
 
 interface Role {
@@ -48,20 +49,23 @@ const roleClass = (level: number) =>
 <template>
     <Head title="User Management" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+
         <div class="flex flex-1 flex-col gap-6 p-6 mx-auto w-full max-w-6xl">
 
             <!-- Header -->
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <Users class="h-6 w-6 text-primary" /> User Management
-                    </h2>
-                    <p class="text-sm text-muted-foreground mt-1">Provision accounts, assign roles, and control system access.</p>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div class="space-y-3">
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+                            <Users class="h-6 w-6 text-primary" /> User Management
+                        </h2>
+                        <p class="text-sm text-muted-foreground mt-1">Provision accounts, assign roles, and control system access.</p>
+                    </div>
+                    <AdminAccessNav active="accounts" />
                 </div>
                 <Link
                     href="/admin/users/create"
-                    class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground text-sm font-medium shadow hover:bg-primary/90 h-9 px-4"
+                    class="inline-flex shrink-0 items-center gap-2 rounded-md bg-primary text-primary-foreground text-sm font-medium shadow hover:bg-primary/90 h-9 px-4"
                 >
                     <Plus class="h-4 w-4" /> New Account
                 </Link>
@@ -168,5 +172,5 @@ const roleClass = (level: number) =>
             </div>
 
         </div>
-    </AppLayout>
+
 </template>

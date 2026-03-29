@@ -152,58 +152,181 @@ server {
 
 ## 4. API Documentation
 
-The REST API is consumed directly via an Authorization bearer token. All API responses adhere to a consistent JSON envelope to simplify frontend error handling and typing.
+The REST API lives under the `/api` prefix and uses **Laravel Sanctum** personal access tokens. Integrations should send **`Accept: application/json`** on every request so validation and authentication failures return JSON (not HTML).
 
-### Global Response Envelopes
+**Base URL:** `{APP_URL}/api` — e.g. `https://csirt.yourdomain.com/api` in production, or `http://localhost:8000/api` locally.
 
-**Success Envelope:**
+### 4.1 Authentication
+
+#### Issue a token — `POST /login` (public)
+
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `login` | string | yes | Username **or** email. |
+| `password` | string | yes | Account password. |
+| `remember` | boolean | no | Accepted by validation; token lifetime is fixed server-side. |
+
+**Success (200)** — `ApiResponse::success` envelope:
+
 ```json
 {
   "success": true,
-  "data": { ... },
-  "message": "Optional localized success message."
+  "message": "Authentication successful.",
+  "data": {
+    "token": "<plain-text-bearer-token>",
+    "expires_at": "2026-04-05T12:00:00.000000Z",
+    "user": {
+      "id": 1,
+      "name": "…",
+      "username": "…",
+      "email": "…",
+      "is_active": true,
+      "role": { "id": 1, "name": "…", "level": 100 },
+      "created_at": "…",
+      "updated_at": "…"
+    }
+  }
 }
 ```
 
-**Paginated Success:**
+**Rate limiting:** repeated failures for the same `login` + IP may return **422** with throttle messaging on the `login` field.
+
+**Invalid credentials or deactivated account:** **422** with validation-style errors on `login`.
+
+#### Use the token
+
+Send the token on all routes behind `auth:sanctum`:
+
+```http
+Authorization: Bearer <plain-text-token>
+```
+
+**Token lifetime:** tokens issued at login expire after **7 days** (`AuthController@login`).
+
+#### Revoke the current token — `POST /logout`
+
+Requires `Authorization: Bearer …`. The response is **not** wrapped in the standard `success` / `data` envelope:
+
+```json
+{
+  "message": "Token successfully revoked."
+}
+```
+
+No JSON body is required; the current token is identified from the header.
+
+### 4.2 Global response envelopes
+
+**Success — single resource** (e.g. `ApiResponse::success`, resources using `BaseResource`):
+
+```json
+{
+  "success": true,
+  "message": "Optional localized success message.",
+  "data": { }
+}
+```
+
+`message` may be omitted when empty.
+
+**Success — paginated collection:**
+
 ```json
 {
   "success": true,
   "data": [ ... ],
   "meta": {
-     "current_page": 1,
-     "per_page": 15,
-     "total": 45
+    "current_page": 1,
+    "per_page": 15,
+    "total": 45
   },
   "links": { ... }
 }
 ```
 
-**Error Envelope (400 / 403 / 404 / 422 / 500):**
+`meta` and `links` follow Laravel’s default pagination (`current_page`, `last_page`, `per_page`, `total`, `from`, `to`, etc.).
+
+**Error envelope** (typical for validation; other errors use `message` and optional `errors`):
+
 ```json
 {
   "success": false,
   "message": "Detailed error context or validation message.",
   "errors": {
-      "field_name": ["Specific validation rejection reasons."]
+    "field_name": ["Specific validation rejection reasons."]
   }
 }
 ```
 
-### Endpoints
+**Common HTTP statuses** (see `bootstrap/app.php` for API JSON handling):
 
-Base URL: `https://csirt.yourdomain.com/api`
+| Status | Typical case |
+| :--- | :--- |
+| **401** | Missing or invalid Bearer token. |
+| **403** | Policy denial or admin gate (`Administrator access required.`). |
+| **404** | Unknown route or model. |
+| **405** | HTTP method not allowed. |
+| **422** | Validation failure. |
+| **500** | Server error (`debug` may appear when `APP_DEBUG=true`). |
 
-| Method | Endpoint | Description | Guard / Policy |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/login` | Submit `email` and `password`. Returns plain-text Bearer token in the `token` string variable. | Public |
-| `POST` | `/logout` | Invalidates current token. | `auth:sanctum` |
-| `GET` | `/user` | Returns the currently authenticated user payload & loaded Role. | `auth:sanctum` |
-| `GET` | `/incidents` | Returns paginated incident reports. | `auth:sanctum` + `ReportPolicy` |
-| `GET` | `/incidents/{id}` | Returns single incident + attachments and severity relations. | `auth:sanctum` + `ReportPolicy` |
-| `GET` | `/admin/users` | Returns paginated user array for administrative oversight. | `api.admin` |
-| `GET` | `/admin/roles` | Returns list of roles, including custom provisioned ones. | `api.admin` |
-| `GET` | `/admin/audit-logs`| Reverse chronologic JSON array of all database actions. | `api.admin` |
+### 4.3 Current user — `GET /user`
+
+Requires Bearer token. Returns the authenticated user with `role` loaded (same user shape as in the login response `data.user`).
+
+### 4.4 Incidents (reports)
+
+Incidents use the `reports` model. **`ReportPolicy`** applies: staff / CSIRT / admin can **read**; **this API only exposes read routes** (writes use the web app unless you extend `routes/api.php`).
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `GET` | `/incidents` | Paginated list. `viewAny` on `Report`. Query: e.g. `?page=2`. |
+| `GET` | `/incidents/{incident}` | Single incident; `view` on that report. Relationships loaded (including `attachments` on show). |
+
+**Incident resource fields** (list/show may omit some relations if not loaded):
+
+| Field | Notes |
+| :--- | :--- |
+| `id`, `subject`, `description`, `status`, `reporter_email` | Core |
+| `category` | `{ id, name }` when loaded |
+| `severity` | `{ id, name, level }` when loaded |
+| `reporter` | `{ id, name, username }` when loaded |
+| `assignee` | `{ id, name }` (assigned user) when loaded |
+| `creator` | `{ id, name }` when loaded |
+| `attachments` | `[{ id, file_name, file_type, file_size }, …]` when loaded |
+| `created_at`, `updated_at` | ISO 8601 strings |
+
+### 4.5 Admin (Administrator only)
+
+Middleware requires **`$user->isAdmin()`** (role level ≥ 100). Others receive **403** with `Administrator access required.`
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `GET` | `/admin/users` | Paginated users with `role` loaded. |
+| `GET` | `/admin/users/{user}` | Single user with `role`. |
+| `GET` | `/admin/roles` | All roles ordered by level; includes `users_count`. |
+| `GET` | `/admin/roles/{role}` | One role with `users_count`. |
+| `GET` | `/admin/audit-logs` | Paginated audit logs; actor loaded as `actor` (`id`, `name`, `email`). |
+
+**Role resource:** `id`, `name`, `level`, `users_count` (when counted), `created_at`.
+
+**Audit log resource:** `id`, `action`, `table_name`, `record_id`, `changes`, `actor` (when loaded), `created_at`.
+
+### 4.6 Quick reference
+
+| Method | Endpoint | Auth |
+| :--- | :--- | :--- |
+| `POST` | `/login` | Public |
+| `POST` | `/logout` | Bearer |
+| `GET` | `/user` | Bearer |
+| `GET` | `/incidents` | Bearer + `ReportPolicy` |
+| `GET` | `/incidents/{incident}` | Bearer + `ReportPolicy` |
+| `GET` | `/admin/users` | Bearer + admin |
+| `GET` | `/admin/users/{user}` | Bearer + admin |
+| `GET` | `/admin/roles` | Bearer + admin |
+| `GET` | `/admin/roles/{role}` | Bearer + admin |
+| `GET` | `/admin/audit-logs` | Bearer + admin |
+
+**Note:** Create/update/delete incidents are not exposed under `routes/api.php` today; use the web application or add routes if required.
 
 ---
 

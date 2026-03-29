@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+
+import AdminAccessNav from '@/components/AdminAccessNav.vue';
 import { Shield, AlertCircle, Loader2, Info } from 'lucide-vue-next';
 
 interface RoleData {
@@ -28,17 +29,20 @@ const submit = () => form.put(`/admin/roles/${props.role.id}`);
 <template>
     <Head :title="`Edit Role: ${role.name}`" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+
         <div class="flex flex-1 flex-col gap-6 p-6 mx-auto w-full max-w-xl">
 
-            <div>
-                <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-                    <Shield class="h-6 w-6 text-primary" /> Edit Role
-                </h2>
-                <p class="text-sm text-muted-foreground mt-1">
-                    Editing <span class="font-semibold">{{ role.name }}</span> — current level
-                    <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{{ role.level }}</code>.
-                </p>
+            <div class="space-y-3">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+                        <Shield class="h-6 w-6 text-primary" /> Edit Role
+                    </h2>
+                    <p class="text-sm text-muted-foreground mt-1">
+                        Editing <span class="font-semibold">{{ role.name }}</span> — current level
+                        <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">{{ role.level }}</code>.
+                    </p>
+                </div>
+                <AdminAccessNav active="roles" />
             </div>
 
             <!-- Warning about level changes -->
@@ -75,11 +79,11 @@ const submit = () => form.put(`/admin/roles/${props.role.id}`);
                         </label>
                         <input
                             id="level" v-model.number="form.level" type="number"
-                            min="1" max="99"
+                            min="11" max="99"
                             class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         />
                         <p class="text-xs text-muted-foreground">
-                            Must be 1–99, unique, and not a reserved level ({{ protectedLevels.join(', ') }}).
+                            Must be 11–99, unique, and not a reserved level ({{ protectedLevels.join(', ') }}).
                         </p>
                         <p v-if="form.errors.level" class="text-[0.8rem] font-medium text-destructive flex items-center gap-1">
                             <AlertCircle class="h-3 w-3" /> {{ form.errors.level }}
@@ -103,5 +107,5 @@ const submit = () => form.put(`/admin/roles/${props.role.id}`);
             </div>
 
         </div>
-    </AppLayout>
+
 </template>

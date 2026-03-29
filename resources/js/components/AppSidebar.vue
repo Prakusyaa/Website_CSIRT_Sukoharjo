@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Shield, BookOpen, AlertTriangle, Inbox, Users, Activity, FileStack } from 'lucide-vue-next';
+import { Shield, BookOpen, AlertTriangle, Inbox, Users, Activity, FileStack, Tags, KeyRound } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -51,16 +51,29 @@ const mainNavItems = computed(() => {
         });
     }
 
+    if (permissions.value?.can_manage_reference_data) {
+        items.push({
+            title: 'Categories & Severities',
+            href: '/admin/reference-data',
+            icon: Tags,
+        });
+    }
+
     if (permissions.value?.is_admin) {
+        items.push({
+            title: 'Users',
+            href: '/admin/users',
+            icon: Users,
+        });
+        items.push({
+            title: 'Roles',
+            href: '/admin/roles',
+            icon: KeyRound,
+        });
         items.push({
             title: 'Audit Log',
             href: '/audit-logs',
             icon: FileStack,
-        });
-        items.push({
-            title: 'Users & Roles',
-            href: '/admin/users',
-            icon: Users,
         });
     }
 

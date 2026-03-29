@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+
+import AdminAccessNav from '@/components/AdminAccessNav.vue';
 import { Users, AlertCircle, Loader2, ShieldAlert } from 'lucide-vue-next';
 
 interface Role {
@@ -41,17 +42,20 @@ const submit = () => form.put(`/admin/users/${props.user.id}`);
 <template>
     <Head :title="`Edit: ${user.name}`" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+
         <div class="flex flex-1 flex-col gap-6 p-6 mx-auto w-full max-w-2xl">
 
             <!-- Header -->
-            <div>
-                <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-                    <Users class="h-6 w-6 text-primary" /> Edit Account
-                </h2>
-                <p class="text-sm text-muted-foreground mt-1">
-                    Modifying profile for <span class="font-semibold">{{ user.name }}</span>.
-                </p>
+            <div class="space-y-3">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+                        <Users class="h-6 w-6 text-primary" /> Edit Account
+                    </h2>
+                    <p class="text-sm text-muted-foreground mt-1">
+                        Modifying profile for <span class="font-semibold">{{ user.name }}</span>.
+                    </p>
+                </div>
+                <AdminAccessNav active="accounts" />
             </div>
 
             <!-- Role demotion error -->
@@ -208,5 +212,5 @@ const submit = () => form.put(`/admin/users/${props.user.id}`);
             </div>
 
         </div>
-    </AppLayout>
+
 </template>

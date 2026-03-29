@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { Activity, AlertOctagon, CheckCircle2, FileText } from 'lucide-vue-next';
 
 const page = usePage();
@@ -50,8 +49,8 @@ const cards = [
 <template>
     <Head title="Dashboard" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-6 p-6">
+    <div class="flex h-full flex-1 flex-col gap-6 p-6">
+         <div class="flex h-full flex-1 flex-col gap-6 p-6">
             
             <!-- Welcome Header Section -->
             <div class="flex flex-col gap-2">
@@ -118,5 +117,5 @@ const cards = [
             </div>
 
         </div>
-    </AppLayout>
+    </div>
 </template>

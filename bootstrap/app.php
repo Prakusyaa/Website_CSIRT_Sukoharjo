@@ -1,11 +1,24 @@
 <?php
 
+use App\Http\Middleware\EnsureApiUserIsAdmin;
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeadersMiddleware;
+use App\Services\AuthService;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,14 +35,22 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             // Silently log out any session belonging to a deactivated account on every web request
-            \App\Http\Middleware\EnsureUserIsActive::class,
+            EnsureUserIsActive::class,
         ]);
+
+        $middleware->append(SecurityHeadersMiddleware::class);
 
         // Register named middleware aliases for use in route definitions
         $middleware->alias([
-            'role'      => \App\Http\Middleware\EnsureUserHasRole::class,
-            'api.admin' => \App\Http\Middleware\EnsureApiUserIsAdmin::class,
+            'role' => EnsureUserHasRole::class,
+            'api.admin' => EnsureApiUserIsAdmin::class,
         ]);
+
+        // Guest middleware: use path-only redirects so "already logged in" matches the request host
+        // (route() uses APP_URL; a localhost vs 127.0.0.1 mismatch drops the session cookie).
+        $middleware->redirectUsersTo(
+            fn (Request $request) => app(AuthService::class)->postLoginPath($request->user()),
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*
@@ -46,27 +67,26 @@ return Application::configure(basePath: dirname(__DIR__))
         */
 
         // Local helper — avoids global function re-declaration on repeated loads
-        $isApi = fn (\Illuminate\Http\Request $r): bool =>
-            $r->is('api/*') || $r->expectsJson();
+        $isApi = fn (Request $r): bool => $r->is('api/*') || $r->expectsJson();
 
         // ── 1. Validation (422) ───────────────────────────────────────────
         $exceptions->render(function (
-            \Illuminate\Validation\ValidationException $e,
-            \Illuminate\Http\Request $request
+            ValidationException $e,
+            Request $request
         ) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'The given data was invalid.',
-                    'errors'  => $e->errors(),
+                    'errors' => $e->errors(),
                 ], 422);
             }
         });
 
         // ── 2. Authentication (401) ───────────────────────────────────────
         $exceptions->render(function (
-            \Illuminate\Auth\AuthenticationException $e,
-            \Illuminate\Http\Request $request
+            AuthenticationException $e,
+            Request $request
         ) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json([
@@ -78,8 +98,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ── 3. Authorization (403) ────────────────────────────────────────
         $exceptions->render(function (
-            \Illuminate\Auth\Access\AuthorizationException $e,
-            \Illuminate\Http\Request $request
+            AuthorizationException $e,
+            Request $request
         ) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json([
@@ -91,11 +111,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ── 4. Model Not Found (404) ──────────────────────────────────────
         $exceptions->render(function (
-            \Illuminate\Database\Eloquent\ModelNotFoundException $e,
-            \Illuminate\Http\Request $request
+            ModelNotFoundException $e,
+            Request $request
         ) use ($isApi) {
             if ($isApi($request)) {
                 $model = class_basename($e->getModel());
+
                 return response()->json([
                     'success' => false,
                     'message' => "{$model} not found.",
@@ -105,8 +126,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ── 5. Route Not Found (404) ──────────────────────────────────────
         $exceptions->render(function (
-            \Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e,
-            \Illuminate\Http\Request $request
+            NotFoundHttpException $e,
+            Request $request
         ) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json([
@@ -118,8 +139,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ── 6. Method Not Allowed (405) ───────────────────────────────────
         $exceptions->render(function (
-            \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException $e,
-            \Illuminate\Http\Request $request
+            MethodNotAllowedHttpException $e,
+            Request $request
         ) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json([
@@ -131,8 +152,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ── 7. Generic HTTP exceptions — abort(xxx) ───────────────────────
         $exceptions->render(function (
-            \Symfony\Component\HttpKernel\Exception\HttpException $e,
-            \Illuminate\Http\Request $request
+            HttpException $e,
+            Request $request
         ) use ($isApi) {
             if ($isApi($request)) {
                 return response()->json([
@@ -144,11 +165,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // ── 8. Catch-all — unexpected server errors (500) ─────────────────
         $exceptions->render(function (
-            \Throwable $e,
-            \Illuminate\Http\Request $request
+            Throwable $e,
+            Request $request
         ) use ($isApi) {
             if ($isApi($request)) {
-                $debug   = app()->hasDebugModeEnabled();
+                $debug = app()->hasDebugModeEnabled();
                 $message = $debug ? $e->getMessage()
                                   : 'An unexpected error occurred. Please try again later.';
 
@@ -157,8 +178,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($debug) {
                     $payload['debug'] = [
                         'exception' => get_class($e),
-                        'file'      => $e->getFile(),
-                        'line'      => $e->getLine(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
                     ];
                 }
 

@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('reports', function (Blueprint $table) {
-            $table->integer('id')->primary();
+            // Second arg: auto-increment so inserts do not require an explicit id (MySQL 1364 otherwise).
+            $table->integer('id', true)->primary();
             $table->string('subject');
             $table->text('description');
             $table->integer('category_id')->nullable();
@@ -30,7 +31,7 @@ return new class extends Migration
             $table->foreign('reporter_id')->references('id')->on('users');
             $table->foreign('assigned_to')->references('id')->on('users');
             $table->foreign('created_by')->references('id')->on('users');
-            
+
             // Helpful indexes
             $table->index('status');
             $table->index('category_id');

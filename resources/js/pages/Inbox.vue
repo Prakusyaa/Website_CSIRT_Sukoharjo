@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { Mail, Search, Filter, Inbox as InboxIcon } from 'lucide-vue-next';
 
 const breadcrumbs = [
@@ -13,9 +12,7 @@ const breadcrumbs = [
 
 <template>
     <Head title="Inbox" />
-
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 overflow-hidden p-6 gap-6">
+    <div class="flex h-full flex-1 overflow-hidden p-6 gap-6">
             
             <!-- Left Column: Message List -->
             <div class="flex w-full max-w-sm flex-col rounded-xl border bg-card shadow-sm dark:border-gray-800">
@@ -62,5 +59,4 @@ const breadcrumbs = [
             </div>
 
         </div>
-    </AppLayout>
 </template>

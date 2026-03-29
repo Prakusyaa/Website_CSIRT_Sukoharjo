@@ -2,8 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\User;
+use App\Enums\RoleLevel;
 use App\Models\Category;
+use App\Models\User;
 
 class CategoryPolicy
 {
@@ -22,16 +23,16 @@ class CategoryPolicy
 
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value);
     }
 
     public function update(User $user, Category $category): bool
     {
-        return false;
+        return $user->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value);
     }
 
     public function delete(User $user, Category $category): bool
     {
-        return false;
+        return $user->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value);
     }
 }

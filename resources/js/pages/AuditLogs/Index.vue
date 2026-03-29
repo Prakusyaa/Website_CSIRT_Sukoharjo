@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+
 import { FileStack, Clock, Database, User, Activity } from 'lucide-vue-next';
 
 interface UserProfile {
@@ -48,9 +48,9 @@ const formatTime = (date: string) =>
 
 const actionBadgeClass = (action: string) => {
     switch (action) {
-        case 'create': return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800';
-        case 'update': return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800';
-        case 'delete': return 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800';
+        case 'created': return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800';
+        case 'updated': return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800';
+        case 'deleted': return 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800';
         default:       return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
     }
 };
@@ -65,7 +65,7 @@ const safeStr = (v: unknown): string => {
 <template>
     <Head title="System Audit Logs" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+
         <div class="flex flex-1 flex-col gap-6 p-6 mx-auto w-full max-w-7xl">
 
             <!-- Header -->
@@ -157,7 +157,7 @@ const safeStr = (v: unknown): string => {
 
                                         <!-- create / delete: pretty-print the whole object -->
                                         <div
-                                            v-if="log.action !== 'update'"
+                                            v-if="log.action !== 'updated'"
                                             class="overflow-x-auto rounded-md border bg-gray-50 p-3 dark:bg-gray-950/50 dark:border-gray-800"
                                         >
                                             <pre class="font-mono text-[11px] leading-snug text-gray-800 dark:text-gray-300">{{ JSON.stringify(log.changes, null, 2) }}</pre>
@@ -222,5 +222,5 @@ const safeStr = (v: unknown): string => {
             </div>
 
         </div>
-    </AppLayout>
+
 </template>

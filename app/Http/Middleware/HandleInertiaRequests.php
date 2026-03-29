@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RoleLevel;
+use App\Models\Report;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -43,8 +46,10 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $request->user() ? [
                     'is_admin' => $request->user()->isAdmin(),
                     'is_csirt' => $request->user()->isCSIRT(),
-                    'can_manage_reports' => $request->user()->can('create', \App\Models\Report::class),
-                    'can_manage_users' => $request->user()->can('viewAny', \App\Models\User::class),
+                    'can_manage_reports' => $request->user()->can('create', Report::class),
+                    'can_manage_users' => $request->user()->can('viewAny', User::class),
+                    'can_delete_incidents' => $request->user()->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value),
+                    'can_manage_reference_data' => $request->user()->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value),
                 ] : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

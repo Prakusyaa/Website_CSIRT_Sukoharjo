@@ -4,15 +4,17 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\AuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class SessionController extends Controller
 {
+    public function __construct(private readonly AuthService $authService) {}
+
     /**
      * Display the login view.
      */
@@ -30,32 +32,18 @@ class SessionController extends Controller
     {
         $request->ensureIsNotRateLimited();
 
-        $credentials = $request->only('password');
-        $loginField = filter_var($request->input('login'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-        $credentials[$loginField] = $request->input('login');
+        // Authenticate — throws ValidationException on failure or inactive account
+        $user = $this->authService->attempt(
+            login: $request->string('login')->toString(),
+            password: $request->string('password')->toString(),
+            remember: $request->boolean('remember'),
+        );
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            throw ValidationException::withMessages([
-                'login' => trans('auth.failed'),
-            ]);
-        }
-
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        if (! $user->is_active) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            throw ValidationException::withMessages([
-                'login' => 'Your account has been deactivated. Contact an administrator.',
-            ]);
-        }
-
+        // Regenerate session to prevent session-fixation attacks
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        // Path-only default so Location stays on the same host as the request (see AuthService)
+        return redirect()->intended($this->authService->postLoginPath($user));
     }
 
     /**

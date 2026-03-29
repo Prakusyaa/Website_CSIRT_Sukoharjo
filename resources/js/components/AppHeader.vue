@@ -78,7 +78,7 @@ const rightNavItems: NavItem[] = [
 <template>
     <div>
         <div class="border-b border-sidebar-border/80">
-            <div class="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
+            <div class="flex h-16 items-center px-4 w-full">
                 <!-- Mobile Menu -->
                 <div class="lg:hidden">
                     <Sheet>
@@ -249,14 +249,14 @@ const rightNavItems: NavItem[] = [
                                     class="size-8 overflow-hidden rounded-full"
                                 >
                                     <AvatarImage
-                                        v-if="auth.user.avatar"
-                                        :src="auth.user.avatar"
-                                        :alt="auth.user.name"
+                                        v-if="auth.user?.avatar"
+                                        :src="auth.user?.avatar"
+                                        :alt="auth.user?.name"
                                     />
                                     <AvatarFallback
                                         class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white"
                                     >
-                                        {{ getInitials(auth.user?.name) }}
+                                        {{ getInitials(auth.user?.name || '') }}
                                     </AvatarFallback>
                                 </Avatar>
                             </Button>
@@ -274,7 +274,7 @@ const rightNavItems: NavItem[] = [
             class="flex w-full border-b border-sidebar-border/70"
         >
             <div
-                class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl"
+                class="flex h-12 w-full items-center justify-start px-4 text-neutral-500"
             >
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </div>

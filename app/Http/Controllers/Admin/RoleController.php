@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,8 +18,6 @@ class RoleController extends Controller
      */
     private const PROTECTED_LEVELS = [10, 50, 100];
 
-
-
     public function index(Request $request): Response
     {
 
@@ -28,8 +26,8 @@ class RoleController extends Controller
             ->paginate(20);
 
         return Inertia::render('Admin/Roles/Index', [
-            'roles'            => $roles,
-            'protectedLevels'  => self::PROTECTED_LEVELS,
+            'roles' => $roles,
+            'protectedLevels' => self::PROTECTED_LEVELS,
         ]);
     }
 
@@ -37,7 +35,7 @@ class RoleController extends Controller
     {
 
         return Inertia::render('Admin/Roles/Create', [
-            'protectedLevels'  => self::PROTECTED_LEVELS,
+            'protectedLevels' => self::PROTECTED_LEVELS,
         ]);
     }
 
@@ -45,11 +43,11 @@ class RoleController extends Controller
     {
 
         $validated = $request->validate([
-            'name'  => 'required|string|max:100|unique:roles,name',
+            'name' => 'required|string|max:100|unique:roles,name',
             'level' => [
                 'required',
                 'integer',
-                'min:1',
+                'min:11',
                 'max:99',          // Hard cap: custom roles cannot reach Admin level (100)
                 'unique:roles,level',
                 // Explicitly block the three reserved levels
@@ -57,10 +55,16 @@ class RoleController extends Controller
             ],
         ], [
             'level.not_in' => 'That level value is reserved for a system role and cannot be reused.',
-            'level.max'    => 'Custom roles cannot have a level of 100 (Admin) or above.',
+            'level.max' => 'Custom roles cannot have a level of 100 (Admin) or above.',
         ]);
 
-        Role::create($validated);
+        $nextId = (int) (Role::withTrashed()->max('id') ?? 0) + 1;
+
+        $role = new Role;
+        $role->id = $nextId;
+        $role->name = $validated['name'];
+        $role->level = $validated['level'];
+        $role->save();
 
         return redirect()->route('admin.roles.index')->with('success', 'Role created successfully.');
     }
@@ -74,7 +78,7 @@ class RoleController extends Controller
         }
 
         return Inertia::render('Admin/Roles/Edit', [
-            'role'            => $role,
+            'role' => $role,
             'protectedLevels' => self::PROTECTED_LEVELS,
         ]);
     }
@@ -87,18 +91,18 @@ class RoleController extends Controller
         }
 
         $validated = $request->validate([
-            'name'  => ['required', 'string', 'max:100', Rule::unique('roles', 'name')->ignore($role->id)],
+            'name' => ['required', 'string', 'max:100', Rule::unique('roles', 'name')->ignore($role->id)],
             'level' => [
                 'required',
                 'integer',
-                'min:1',
+                'min:11',
                 'max:99',
                 Rule::unique('roles', 'level')->ignore($role->id),
                 Rule::notIn(self::PROTECTED_LEVELS),
             ],
         ], [
             'level.not_in' => 'That level value is reserved for a system role.',
-            'level.max'    => 'Custom roles cannot reach level 100 (Admin).',
+            'level.max' => 'Custom roles cannot reach level 100 (Admin).',
         ]);
 
         $role->update($validated);

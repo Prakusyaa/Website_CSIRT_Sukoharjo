@@ -5,12 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ReferenceDataService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class UserController extends Controller
 {
@@ -26,7 +27,7 @@ class UserController extends Controller
     public function create(Request $request): Response
     {
         return Inertia::render('Admin/Users/Create', [
-            'roles' => app(\App\Services\ReferenceDataService::class)->getRoles(),
+            'roles' => app(ReferenceDataService::class)->getRoles(),
         ]);
     }
 
@@ -34,18 +35,28 @@ class UserController extends Controller
     {
 
         $validated = $request->validate([
-            'name'      => 'required|string|max:255',
-            'email'     => 'required|string|email|max:255|unique:users',
-            'username'  => 'required|string|max:50|unique:users',
-            'role_id'   => 'required|integer|exists:roles,id',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'username' => 'required|string|max:50|unique:users',
+            'role_id' => 'required|integer|exists:roles,id',
             'is_active' => 'boolean',
-            'password'  => 'required|string|min:8',
+            'password' => 'required|string|min:8',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $validated['is_active'] ?? true;
 
-        User::create($validated);
+        $nextId = (int) (User::withTrashed()->max('id') ?? 0) + 1;
+
+        $user = new User;
+        $user->id = $nextId;
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->username = $validated['username'];
+        $user->role_id = $validated['role_id'];
+        $user->is_active = $validated['is_active'];
+        $user->password = $validated['password'];
+        $user->save();
 
         return redirect()->route('admin.users.index')->with('success', 'User account successfully provisioned.');
     }
@@ -53,8 +64,8 @@ class UserController extends Controller
     public function edit(Request $request, User $user): Response
     {
         return Inertia::render('Admin/Users/Edit', [
-            'user'  => $user,
-            'roles' => app(\App\Services\ReferenceDataService::class)->getRoles(),
+            'user' => $user,
+            'roles' => app(ReferenceDataService::class)->getRoles(),
         ]);
     }
 
@@ -62,12 +73,12 @@ class UserController extends Controller
     {
 
         $validated = $request->validate([
-            'name'      => 'required|string|max:255',
-            'email'     => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'username'  => ['required', 'string', 'max:50', Rule::unique('users')->ignore($user->id)],
-            'role_id'   => 'required|integer|exists:roles,id',
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'username' => ['required', 'string', 'max:50', Rule::unique('users')->ignore($user->id)],
+            'role_id' => 'required|integer|exists:roles,id',
             'is_active' => 'boolean',
-            'password'  => 'nullable|string|min:8',
+            'password' => 'nullable|string|min:8',
         ]);
 
         // Self-lockout protection: admins cannot demote or deactivate themselves
@@ -79,7 +90,7 @@ class UserController extends Controller
             $validated['is_active'] = true;
         }
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);

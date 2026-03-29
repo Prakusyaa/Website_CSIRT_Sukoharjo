@@ -1,8 +1,28 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Search, ChevronUp, ChevronDown, Filter, FileText } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
+
+const page = usePage();
+const permissions = computed(() => page.props.auth.permissions);
+const currentUserId = computed(() => page.props.auth.user?.id as number | undefined);
+const takingCaseId = ref<number | null>(null);
+
+const takeCase = (incidentId: number) => {
+    const uid = currentUserId.value;
+    if (!uid) return;
+    takingCaseId.value = incidentId;
+    router.put(
+        `/incidents/${incidentId}`,
+        { assigned_to: uid },
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                takingCaseId.value = null;
+            },
+        },
+    );
+};
 
 const props = defineProps<{
     incidents: {
@@ -89,7 +109,6 @@ const formatDate = (isoString?: string) => {
 <template>
     <Head title="Incidents Workbench" />
     
-    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 p-6">
             
             <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -97,7 +116,7 @@ const formatDate = (isoString?: string) => {
                     <h2 class="text-2xl font-bold tracking-tight">Incidents Directory</h2>
                     <p class="text-sm text-muted-foreground">Manage and filter through all operational security incidents.</p>
                 </div>
-                <div>
+                <div v-if="permissions?.is_csirt">
                     <Link href="/incidents/create" class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
                         Log New Incident
                     </Link>
@@ -146,6 +165,7 @@ const formatDate = (isoString?: string) => {
                                 </th>
                                 <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Reporter</th>
                                 <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Severity</th>
+                                <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Assigned to</th>
                                 <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer" @click="toggleSort('created_at')">
                                     <div class="flex items-center gap-1">Logged At <span v-if="sortField === 'created_at'"><component :is="sortDirection === 'asc' ? ChevronUp : ChevronDown" class="h-4 w-4" /></span></div>
                                 </th>
@@ -166,6 +186,24 @@ const formatDate = (isoString?: string) => {
                                     <span v-if="incident.severity" class="text-xs font-semibold">{{ incident.severity.name }}</span>
                                     <span v-else class="text-xs text-muted-foreground italic">Triage pending</span>
                                 </td>
+                                <td class="p-4 align-middle">
+                                    <span
+                                        v-if="incident.assignee?.name"
+                                        class="text-sm text-foreground"
+                                    >
+                                        {{ incident.assignee.name }}
+                                    </span>
+                                    <button
+                                        v-else-if="permissions?.can_manage_reports"
+                                        type="button"
+                                        :disabled="takingCaseId === incident.id"
+                                        class="inline-flex items-center justify-center rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                        @click="takeCase(incident.id)"
+                                    >
+                                        {{ takingCaseId === incident.id ? 'Taking…' : 'Take Case' }}
+                                    </button>
+                                    <span v-else class="text-sm text-muted-foreground">—</span>
+                                </td>
                                 <td class="p-4 align-middle text-muted-foreground">{{ formatDate(incident.created_at) }}</td>
                                 <td class="p-4 align-middle text-right">
                                     <Link :href="`/incidents/${incident.id}`" class="text-primary hover:underline text-sm font-medium">View</Link>
@@ -173,7 +211,7 @@ const formatDate = (isoString?: string) => {
                             </tr>
                             
                             <tr v-if="incidents.data.length === 0">
-                                <td colspan="7" class="p-8 text-center text-muted-foreground">
+                                <td colspan="8" class="p-8 text-center text-muted-foreground">
                                     <div class="flex flex-col items-center justify-center gap-2">
                                         <FileText class="h-8 w-8 opacity-40" />
                                         <p>No incidents found matching these criteria.</p>
@@ -206,5 +244,4 @@ const formatDate = (isoString?: string) => {
             </div>
 
         </div>
-    </AppLayout>
 </template>

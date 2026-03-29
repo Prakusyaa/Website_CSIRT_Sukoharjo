@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+
+import AdminAccessNav from '@/components/AdminAccessNav.vue';
 import { Shield, Plus, Pencil, Trash2, Lock, CheckCircle2, ShieldAlert } from 'lucide-vue-next';
 import { ref } from 'vue';
 
@@ -53,22 +54,25 @@ const performDelete = (role: Role) => {
 <template>
     <Head title="Role Management" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+
         <div class="flex flex-1 flex-col gap-6 p-6 mx-auto w-full max-w-4xl">
 
             <!-- Header -->
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <Shield class="h-6 w-6 text-primary" /> Role Management
-                    </h2>
-                    <p class="text-sm text-muted-foreground mt-1">
-                        Manage access roles and their permission levels. Core system roles are protected.
-                    </p>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div class="space-y-3">
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+                            <Shield class="h-6 w-6 text-primary" /> Role Management
+                        </h2>
+                        <p class="text-sm text-muted-foreground mt-1">
+                            Manage access roles and their permission levels. Core system roles are protected.
+                        </p>
+                    </div>
+                    <AdminAccessNav active="roles" />
                 </div>
                 <Link
                     href="/admin/roles/create"
-                    class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground text-sm font-medium shadow hover:bg-primary/90 h-9 px-4"
+                    class="inline-flex shrink-0 items-center gap-2 rounded-md bg-primary text-primary-foreground text-sm font-medium shadow hover:bg-primary/90 h-9 px-4"
                 >
                     <Plus class="h-4 w-4" /> New Role
                 </Link>
@@ -201,5 +205,5 @@ const performDelete = (role: Role) => {
             </div>
 
         </div>
-    </AppLayout>
+
 </template>

@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Support\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Public — token issuance
-Route::post('/login',  [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']);
 
 // All remaining API routes require a valid Sanctum token
 Route::middleware('auth:sanctum')->group(function () {
@@ -48,6 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('incidents')->name('api.incidents.')->group(function () {
 
         Route::get('/', function (Request $request) {
+            Gate::authorize('viewAny', Report::class);
+
             $incidents = Report::with(['category', 'severity', 'reporter', 'assignedUser'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
@@ -56,7 +59,10 @@ Route::middleware('auth:sanctum')->group(function () {
         })->name('index');
 
         Route::get('/{incident}', function (Report $incident) {
+            Gate::authorize('view', $incident);
+
             $incident->load(['category', 'severity', 'reporter', 'assignedUser', 'creator', 'attachments']);
+
             return ApiResponse::success(new IncidentResource($incident));
         })->name('show');
 
@@ -74,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Users
         Route::get('/admin/users', function (Request $request) {
             $users = User::with('role')->orderBy('id')->paginate(20);
+
             return ApiResponse::paginated(UserResource::collection($users));
         })->name('api.admin.users.index');
 
@@ -84,17 +91,20 @@ Route::middleware('auth:sanctum')->group(function () {
         // Roles
         Route::get('/admin/roles', function () {
             $roles = Role::withCount('users')->orderBy('level')->get();
+
             return ApiResponse::success(RoleResource::collection($roles));
         })->name('api.admin.roles.index');
 
         Route::get('/admin/roles/{role}', function (Role $role) {
             $role->loadCount('users');
+
             return ApiResponse::success(new RoleResource($role));
         })->name('api.admin.roles.show');
 
         // Audit Logs (read-only via API)
         Route::get('/admin/audit-logs', function () {
             $logs = AuditLog::with('user:id,name,email')->orderBy('id', 'desc')->paginate(20);
+
             return ApiResponse::paginated(AuditLogResource::collection($logs));
         })->name('api.admin.audit-logs.index');
 

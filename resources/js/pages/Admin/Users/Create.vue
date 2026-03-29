@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+
+import AdminAccessNav from '@/components/AdminAccessNav.vue';
 import { Users, AlertCircle, Loader2 } from 'lucide-vue-next';
 
 interface Role {
@@ -9,7 +10,9 @@ interface Role {
     level: number;
 }
 
-defineProps<{ roles: Role[] }>();
+const props = defineProps<{
+    roles: Role[];
+}>();
 
 const breadcrumbs = [
     { title: 'Admin', href: '/dashboard' },
@@ -32,14 +35,17 @@ const submit = () => form.post('/admin/users');
 <template>
     <Head title="Create User Account" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+
         <div class="flex flex-1 flex-col gap-6 p-6 mx-auto w-full max-w-2xl">
 
-            <div>
-                <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-                    <Users class="h-6 w-6 text-primary" /> Provision New Account
-                </h2>
-                <p class="text-sm text-muted-foreground mt-1">Create a new CSIRT system user and assign their access role.</p>
+            <div class="space-y-3">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+                        <Users class="h-6 w-6 text-primary" /> Provision New Account
+                    </h2>
+                    <p class="text-sm text-muted-foreground mt-1">Create a new CSIRT system user and assign their access role.</p>
+                </div>
+                <AdminAccessNav active="accounts" />
             </div>
 
             <div class="rounded-xl border bg-card shadow-sm dark:border-gray-800">
@@ -94,7 +100,7 @@ const submit = () => form.post('/admin/users');
                         <select id="role_id" v-model="form.role_id"
                             class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                             <option value="" disabled>Select a role…</option>
-                            <option v-for="role in roles" :key="role.id" :value="role.id">
+                            <option v-for="role in props.roles" :key="role.id" :value="role.id">
                                 {{ role.name }} (Level {{ role.level }})
                             </option>
                         </select>
@@ -129,5 +135,5 @@ const submit = () => form.post('/admin/users');
             </div>
 
         </div>
-    </AppLayout>
+
 </template>

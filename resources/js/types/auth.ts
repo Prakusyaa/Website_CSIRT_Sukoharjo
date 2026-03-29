@@ -16,6 +16,8 @@ export type Auth = {
         is_csirt: boolean;
         can_manage_reports: boolean;
         can_manage_users: boolean;
+        can_delete_incidents?: boolean;
+        can_manage_reference_data?: boolean;
     };
 };
 

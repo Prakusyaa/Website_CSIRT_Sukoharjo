@@ -76,6 +76,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Whether the user's role level is strictly greater than the given value.
+     */
+    public function hasRoleLevelGreaterThan(int $level): bool
+    {
+        return ($this->role?->level ?? 0) > $level;
+    }
+
+    /**
      * Check if the user has full unrestricted administrative capabilities.
      */
     public function isAdmin(): bool
@@ -137,5 +145,23 @@ class User extends Authenticatable
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
+    }
+
+    /**
+     * Scope a query to only include active users.
+     */
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('is_active', true);
+    }
+
+    /**
+     * Scope a query to only include users with CSIRT capabilities or higher.
+     */
+    public function scopeCsirt(Builder $query): void
+    {
+        $query->whereHas('role', function (Builder $query) {
+            $query->where('level', '>=', RoleLevel::CSIRT->value);
+        });
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Attachment;
 use App\Models\Report;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -16,22 +17,22 @@ class IncidentService
         $query = Report::with(['category', 'severity', 'assignedUser', 'reporter']);
 
         // Handle text-based search (Subject or Email)
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->where('subject', 'like', '%' . $filters['search'] . '%')
-                  ->orWhere('reporter_email', 'like', '%' . $filters['search'] . '%');
+                $q->where('subject', 'like', '%'.$filters['search'].'%')
+                    ->orWhere('reporter_email', 'like', '%'.$filters['search'].'%');
             });
         }
 
         // Handle specific status filter exactly via enum values
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
         // Safe Sort Processing (whitelist sorting columns dynamically preventing injection!)
         $sortColumn = $filters['sort'] ?? 'created_at';
         $sortDirection = $filters['direction'] ?? 'desc';
-        
+
         $allowedSorts = ['id', 'subject', 'status', 'created_at', 'severity_id'];
         $safeSortColumn = in_array($sortColumn, $allowedSorts) ? $sortColumn : 'created_at';
         $safeSortDirection = in_array(strtolower($sortDirection), ['asc', 'desc']) ? strtolower($sortDirection) : 'desc';
@@ -46,7 +47,7 @@ class IncidentService
      */
     public function getIncidentById(int $id): Report
     {
-        return Report::with(['category', 'severity', 'assignedUser', 'reporter', 'creator'])
+        return Report::with(['category', 'severity', 'assignedUser', 'reporter', 'creator', 'attachments'])
             ->findOrFail($id);
     }
 
@@ -59,7 +60,7 @@ class IncidentService
         $data['created_by'] = $creatorId;
 
         // Auto-assign reporter_id if the creator acts as themselves making it
-        if (!isset($data['reporter_id']) && $creatorId) {
+        if (! isset($data['reporter_id']) && $creatorId) {
             $data['reporter_id'] = $creatorId;
         }
 
@@ -71,16 +72,16 @@ class IncidentService
         }
 
         $incident = Report::create($data);
-        
+
         // Ensure robustly persisted disk binaries map seamlessly with Attachment relationships preventing public-facing URL exposures natively
-        if (!empty($attachments)) {
+        if (! empty($attachments)) {
             foreach ($attachments as $file) {
                 if ($file->isValid()) {
-                    $path = $file->store('incidents/' . $incident->id, 'local');
-                    
-                    \App\Models\Attachment::create([
+                    $path = $file->store('incidents/'.$incident->id, 'local');
+
+                    Attachment::create([
                         'report_id' => $incident->id,
-                        'file_name' => collect(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME))->take(255)->implode('') . '.' . $file->getClientOriginalExtension(),
+                        'file_name' => collect(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME))->take(255)->implode('').'.'.$file->getClientOriginalExtension(),
                         'file_path' => $path,
                         'file_type' => $file->getMimeType(),
                         'file_size' => $file->getSize(),
@@ -89,8 +90,6 @@ class IncidentService
                 }
             }
         }
-        
-        // TODO: Fire incident created audit event 
 
         return $incident;
     }
@@ -102,8 +101,6 @@ class IncidentService
     {
         $incident->update($data);
 
-        // TODO: Map complex State transitions and record in AuditLogs
-
         return $incident;
     }
 
@@ -112,7 +109,6 @@ class IncidentService
      */
     public function deleteIncident(Report $incident): bool
     {
-        // Audit log tracing here.
         return $incident->delete() ?? false;
     }
 }

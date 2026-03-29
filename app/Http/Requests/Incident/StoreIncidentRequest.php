@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Incident;
 
+use App\Models\Report;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreIncidentRequest extends FormRequest
@@ -11,13 +13,13 @@ class StoreIncidentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('create', \App\Models\Report::class);
+        return $this->user()->can('create', Report::class);
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -30,7 +32,12 @@ class StoreIncidentRequest extends FormRequest
             'reporter_id' => ['nullable', 'integer', 'exists:users,id'],
             'reporter_email' => ['nullable', 'email', 'max:255'],
             'attachments' => ['nullable', 'array', 'max:5'],
-            'attachments.*' => ['file', 'mimes:jpg,jpeg,png,pdf,csv,txt,zip', 'max:10240'],
+            'attachments.*' => [
+                'file',
+                'mimetypes:image/jpeg,image/png,application/pdf,text/csv,text/plain,application/zip',
+                'extensions:jpg,jpeg,png,pdf,csv,txt,zip',
+                'max:10240',
+            ],
         ];
     }
 }

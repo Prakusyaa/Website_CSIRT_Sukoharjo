@@ -2,9 +2,9 @@
 
 namespace App\Policies;
 
+use App\Enums\RoleLevel;
 use App\Models\Report;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ReportPolicy
 {
@@ -45,8 +45,8 @@ class ReportPolicy
      */
     public function delete(User $user, Report $report): bool
     {
-        // Deletes strictly restricted to Admin. Handled by Gate::before!
-        return false;
+        // Soft-delete: role level strictly above CSIRT (50), e.g. administrators.
+        return $user->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value);
     }
 
     /**

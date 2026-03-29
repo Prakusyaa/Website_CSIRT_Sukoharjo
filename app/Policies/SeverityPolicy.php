@@ -2,8 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\User;
+use App\Enums\RoleLevel;
 use App\Models\Severity;
+use App\Models\User;
 
 class SeverityPolicy
 {
@@ -22,16 +23,16 @@ class SeverityPolicy
 
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value);
     }
 
     public function update(User $user, Severity $severity): bool
     {
-        return false;
+        return $user->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value);
     }
 
     public function delete(User $user, Severity $severity): bool
     {
-        return false;
+        return $user->hasRoleLevelGreaterThan(RoleLevel::CSIRT->value);
     }
 }

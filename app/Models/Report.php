@@ -56,6 +56,14 @@ class Report extends Model
     }
 
     /**
+     * Alias for {@see assignee()} — used by API/resources that expect this name.
+     */
+    public function assignedUser(): BelongsTo
+    {
+        return $this->assignee();
+    }
+
+    /**
      * Get the user who created this record in the system.
      */
     public function creator(): BelongsTo

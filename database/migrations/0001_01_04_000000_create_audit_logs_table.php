@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('audit_logs', function (Blueprint $table) {
-            $table->integer('id')->primary();
+            $table->integer('id', true)->primary();
             $table->integer('user_id')->nullable();
             $table->enum('action', ['created', 'updated', 'deleted'])->nullable();
             $table->string('table_name');
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamp('created_at')->nullable();
 
             $table->foreign('user_id')->references('id')->on('users');
-            
+
             // Indexes
             $table->index(['table_name', 'record_id']);
             $table->index('user_id');

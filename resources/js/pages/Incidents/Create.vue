@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onUnmounted } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+
 import { Shield, AlertCircle, Loader2, User, Mail, Briefcase, X, File as FileIcon, Image as ImageIcon } from 'lucide-vue-next';
 
 interface Category {
@@ -137,7 +137,7 @@ const submit = () => {
 <template>
     <Head title="Log Incident" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+
         <div class="flex flex-1 flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
             
             <div class="flex items-center gap-4">
@@ -200,7 +200,7 @@ const submit = () => {
                                     class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="" disabled>Search or select an internal user...</option>
-                                    <option v-for="user in users" :key="user.id" :value="user.id">
+                                    <option v-for="user in props.users" :key="user.id" :value="user.id">
                                         {{ user.name }} ({{ user.email }})
                                     </option>
                                 </select>
@@ -275,7 +275,7 @@ const submit = () => {
                                     class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="" disabled>Select a category...</option>
-                                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                                    <option v-for="category in props.categories" :key="category.id" :value="category.id">
                                         {{ category.name }}
                                     </option>
                                 </select>
@@ -295,7 +295,7 @@ const submit = () => {
                                     class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="" disabled>Select a severity level...</option>
-                                    <option v-for="severity in severities" :key="severity.id" :value="severity.id">
+                                    <option v-for="severity in props.severities" :key="severity.id" :value="severity.id">
                                         {{ severity.name }}
                                     </option>
                                 </select>
@@ -421,7 +421,7 @@ const submit = () => {
                                     class="flex h-10 w-full items-center justify-between rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-950 dark:border-indigo-800"
                                 >
                                     <option value="" selected>Unassigned (Pending Triage)</option>
-                                    <option v-for="handler in csirtUsers" :key="handler.id" :value="handler.id">
+                                    <option v-for="handler in props.csirtUsers" :key="handler.id" :value="handler.id">
                                         {{ handler.name }} 
                                         {{ currentUser?.id === handler.id ? '(You)' : '' }}
                                     </option>
@@ -457,5 +457,5 @@ const submit = () => {
             </form>
             
         </div>
-    </AppLayout>
+
 </template>

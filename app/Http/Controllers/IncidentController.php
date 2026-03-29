@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Incident\StoreIncidentRequest;
 use App\Http\Requests\Incident\UpdateIncidentRequest;
 use App\Http\Resources\IncidentResource;
+use App\Models\Category;
 use App\Models\Report;
+use App\Models\Severity;
+use App\Models\User;
 use App\Services\IncidentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +27,7 @@ class IncidentController extends Controller
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Report::class);
-        
+
         $filters = $request->only(['search', 'status', 'sort', 'direction']);
         $incidents = $this->incidentService->getPaginatedList($filters);
 
@@ -41,13 +44,19 @@ class IncidentController extends Controller
     {
         $this->authorize('create', Report::class);
 
-        $referenceService = app(\App\Services\ReferenceDataService::class);
-
+        // Load directly from the database (not ReferenceDataService cache) so form
+        // dropdowns stay correct after seeding; stale empty cache was hiding rows.
         return Inertia::render('Incidents/Create', [
-            'categories' => $referenceService->getCategories(),
-            'severities' => $referenceService->getSeverities(),
-            'users'      => \App\Models\User::active()->select('id', 'name', 'email')->get(),
-            'csirtUsers' => \App\Models\User::active()->csirt()->select('id', 'name')->get(),
+            'categories' => Category::query()
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get(),
+            'severities' => Severity::query()
+                ->select('id', 'name', 'level')
+                ->orderBy('level')
+                ->get(),
+            'users' => User::active()->select('id', 'name', 'email')->get(),
+            'csirtUsers' => User::active()->csirt()->select('id', 'name')->get(),
         ]);
     }
 
@@ -71,11 +80,12 @@ class IncidentController extends Controller
     public function show(int $id): Response
     {
         $incident = $this->incidentService->getIncidentById($id);
-        
+
         $this->authorize('view', $incident);
 
         return Inertia::render('Incidents/Show', [
-            'incident' => new IncidentResource($incident),
+            // Resolve to a plain array — passing JsonResource to Inertia wraps payload in { data, success }.
+            'incident' => (new IncidentResource($incident))->resolve(request()),
         ]);
     }
 
@@ -85,11 +95,20 @@ class IncidentController extends Controller
     public function edit(int $id): Response
     {
         $incident = $this->incidentService->getIncidentById($id);
-        
+
         $this->authorize('update', $incident);
 
         return Inertia::render('Incidents/Edit', [
-            'incident' => new IncidentResource($incident),
+            'incident' => (new IncidentResource($incident))->resolve(request()),
+            'categories' => Category::query()
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get(),
+            'severities' => Severity::query()
+                ->select('id', 'name', 'level')
+                ->orderBy('level')
+                ->get(),
+            'csirtUsers' => User::active()->csirt()->select('id', 'name')->get(),
         ]);
     }
 
@@ -99,7 +118,7 @@ class IncidentController extends Controller
     public function update(UpdateIncidentRequest $request, int $id): RedirectResponse
     {
         $incident = $this->incidentService->getIncidentById($id);
-        
+
         // Authorization is already handled beautifully natively via UpdateIncidentRequest!
         $this->incidentService->updateIncident($incident, $request->validated());
 
@@ -113,9 +132,9 @@ class IncidentController extends Controller
     public function destroy(int $id): RedirectResponse
     {
         $incident = $this->incidentService->getIncidentById($id);
-        
+
         $this->authorize('delete', $incident);
-        
+
         $this->incidentService->deleteIncident($incident);
 
         return redirect()->route('incidents.index')

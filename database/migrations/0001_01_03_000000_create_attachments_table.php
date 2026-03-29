@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attachments', function (Blueprint $table) {
-            $table->integer('id')->primary();
+            $table->integer('id', true)->primary();
             $table->integer('report_id');
             $table->string('file_name')->nullable();
             $table->string('file_path')->nullable();
@@ -24,7 +24,7 @@ return new class extends Migration
 
             $table->foreign('report_id')->references('id')->on('reports');
             $table->foreign('createdby')->references('id')->on('users');
-            
+
             // Indexes
             $table->index('report_id');
             $table->index('createdby');

@@ -1,3 +1,11 @@
+<script lang="ts">
+import GuestLayout from '@/layouts/GuestLayout.vue';
+
+export default {
+    layout: GuestLayout,
+};
+</script>
+
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { Loader2, LogIn } from 'lucide-vue-next';
@@ -23,78 +31,69 @@ const submit = () => {
 <template>
     <Head title="Log in" />
 
-    <div class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-        <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-800">
-            <div class="p-8">
-                <!-- Header -->
-                <div class="mb-8 text-center">
-                    <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                        <LogIn class="h-6 w-6" />
-                    </div>
-                    <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Sign in to CSIRT</h2>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Secure internal response system access
-                    </p>
-                </div>
-
-                <!-- Status Message -->
-                <div v-if="status" class="mb-4 rounded-lg bg-green-50 p-4 text-sm text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                    {{ status }}
-                </div>
-
-                <!-- Form -->
-                <form @submit.prevent="submit" class="space-y-6">
-                    <div>
-                        <label for="login" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Username or Email</label>
-                        <div class="mt-2">
-                            <input
-                                id="login"
-                                v-model="form.login"
-                                type="text"
-                                required
-                                autofocus
-                                class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white sm:text-sm transition-colors"
-                            />
-                        </div>
-                        <p v-if="form.errors.login" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ form.errors.login }}</p>
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Password</label>
-                        <div class="mt-2">
-                            <input
-                                id="password"
-                                v-model="form.password"
-                                type="password"
-                                required
-                                class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white sm:text-sm transition-colors"
-                            />
-                        </div>
-                        <p v-if="form.errors.password" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ form.errors.password }}</p>
-                    </div>
-
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <input
-                                id="remember"
-                                v-model="form.remember"
-                                type="checkbox"
-                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:ring-offset-gray-800"
-                            />
-                            <label for="remember" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">Remember me</label>
-                        </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="flex w-full justify-center rounded-xl border border-transparent bg-blue-600 py-2.5 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:focus:ring-offset-gray-800 transition-all duration-200"
-                    >
-                        <Loader2 v-if="form.processing" class="mr-2 h-5 w-5 animate-spin" />
-                        Sign in
-                    </button>
-                </form>
-            </div>
-        </div>
+    <!-- Status Message -->
+    <div v-if="status" class="mb-4 rounded-lg bg-green-50 p-4 text-sm text-green-600 border border-green-200 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400">
+        {{ status }}
     </div>
+
+    <!-- Minimal Form Wrapper inside the GuestLayout slot -->
+    <form @submit.prevent="submit" class="space-y-5">
+        <div>
+            <label for="login" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Username or Email</label>
+            <div class="mt-1">
+                <input
+                    id="login"
+                    v-model="form.login"
+                    type="text"
+                    required
+                    autofocus
+                    class="block w-full rounded-xl border-zinc-300 px-4 py-3 shadow-sm placeholder:text-zinc-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white sm:text-sm transition-all duration-200"
+                    placeholder="admin@csirt.local"
+                />
+            </div>
+            <p v-if="form.errors.login" class="mt-2 text-sm font-medium text-red-500">{{ form.errors.login }}</p>
+        </div>
+
+        <div>
+            <div class="flex items-center justify-between">
+                <label for="password" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
+                <!-- Add forgot password link here if wanted -->
+            </div>
+            <div class="mt-1">
+                <input
+                    id="password"
+                    v-model="form.password"
+                    type="password"
+                    required
+                    class="block w-full rounded-xl border-zinc-300 px-4 py-3 shadow-sm placeholder:text-zinc-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white sm:text-sm transition-all duration-200"
+                    placeholder="••••••••"
+                />
+            </div>
+            <p v-if="form.errors.password" class="mt-2 text-sm font-medium text-red-500">{{ form.errors.password }}</p>
+        </div>
+
+        <div class="flex items-center">
+            <input
+                id="remember"
+                v-model="form.remember"
+                type="checkbox"
+                class="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:focus:ring-offset-zinc-900"
+            />
+            <label for="remember" class="ml-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Remember me</label>
+        </div>
+
+        <div class="pt-2">
+            <button
+                type="submit"
+                :disabled="form.processing"
+                class="flex w-full items-center justify-center rounded-xl border border-transparent bg-zinc-900 px-4 py-3 text-sm font-medium text-white shadow-md hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-500 dark:focus:ring-offset-zinc-900 transition-all duration-200 ease-in-out"
+            >
+                <Loader2 v-if="form.processing" class="mr-2 h-5 w-5 animate-spin" />
+                <span v-else class="mr-2 flex h-5 w-5 items-center justify-center">
+                    <LogIn class="h-4 w-4" />
+                </span>
+                Sign In to CSIRT
+            </button>
+        </div>
+    </form>
 </template>
