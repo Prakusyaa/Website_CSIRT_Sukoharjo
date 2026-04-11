@@ -33,11 +33,7 @@ const mainNavItems = computed(() => {
     ];
 
     if (permissions.value?.can_manage_reports) {
-        items.push({
-            title: 'Inbox',
-            href: '/inbox',
-            icon: Inbox,
-        });
+
         items.push({
             title: 'Incidents',
             href: '/incidents',

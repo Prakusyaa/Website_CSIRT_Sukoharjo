@@ -15,10 +15,21 @@ import {
 } from '@/components/ui/sidebar';
 import UserInfo from '@/components/UserInfo.vue';
 import UserMenuContent from '@/components/UserMenuContent.vue';
+import { ref } from 'vue';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const { isMobile, state } = useSidebar();
+const showWipModal = ref(false);
 </script>
 
 <template>
@@ -47,9 +58,23 @@ const { isMobile, state } = useSidebar();
                     align="end"
                     :side-offset="4"
                 >
-                    <UserMenuContent :user="user" />
+                    <UserMenuContent :user="user" @show-wip="showWipModal = true" />
                 </DropdownMenuContent>
             </DropdownMenu>
         </SidebarMenuItem>
     </SidebarMenu>
+
+    <Dialog v-model:open="showWipModal">
+        <DialogContent class="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Under Construction</DialogTitle>
+                <DialogDescription>
+                    The Account Settings page is currently still in progress. Please check back later!
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+                <Button @click="showWipModal = false">Close</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>

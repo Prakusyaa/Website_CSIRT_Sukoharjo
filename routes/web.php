@@ -42,9 +42,10 @@ Route::middleware(['auth'])->group(function () {
         $totalIncidents = \App\Models\Report::count();
         $openIncidents = \App\Models\Report::whereIn('status', ['pending', 'validated', 'in_progress'])->count();
         $resolvedIncidents = \App\Models\Report::where('status', 'resolved')->count();
-        $criticalIncidents = \App\Models\Report::whereHas('severity', function ($query) {
-            $query->where('level', '>=', 60);
-        })->count();
+        $criticalIncidents = \App\Models\Report::whereIn('status', ['pending', 'validated', 'in_progress'])
+            ->whereHas('severity', function ($query) {
+                $query->where('level', '>=', 60);
+            })->count();
 
         return Inertia::render('Dashboard', [
             'stats' => [
@@ -56,9 +57,7 @@ Route::middleware(['auth'])->group(function () {
         ]);
     })->name('dashboard');
 
-    Route::get('/inbox', function () {
-        return Inertia::render('Inbox');
-    })->name('inbox');
+
 
     // Incidents — Staff can view only; CSIRT+ can create/edit/delete
     // Incidents — Accessible by Staff; creation by CSIRT+

@@ -14,8 +14,16 @@ type Props = {
     user: User;
 };
 
+const emit = defineEmits<{
+    (e: 'showWip'): void;
+}>();
+
 const handleLogout = () => {
     router.flushAll();
+};
+
+const showWipAlert = () => {
+    emit('showWip');
 };
 
 defineProps<Props>();
@@ -30,10 +38,10 @@ defineProps<Props>();
     <DropdownMenuSeparator />
     <DropdownMenuGroup>
         <DropdownMenuItem :as-child="true">
-            <Link class="block w-full cursor-pointer" href="/settings/profile" prefetch>
+            <button class="flex w-full items-center block cursor-pointer" @click="showWipAlert">
                 <Settings class="mr-2 h-4 w-4" />
                 Settings
-            </Link>
+            </button>
         </DropdownMenuItem>
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
