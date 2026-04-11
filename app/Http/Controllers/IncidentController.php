@@ -28,12 +28,12 @@ class IncidentController extends Controller
     {
         $this->authorize('viewAny', Report::class);
 
-        $filters = $request->only(['search', 'status', 'sort', 'direction']);
+        $filters = $request->only(['search', 'status', 'sort', 'direction', 'start_date', 'end_date']);
         $incidents = $this->incidentService->getPaginatedList($filters);
 
         return Inertia::render('Incidents/Index', [
             'incidents' => IncidentResource::collection($incidents),
-            'filters' => $filters,
+            'filters'   => $filters,
         ]);
     }
 

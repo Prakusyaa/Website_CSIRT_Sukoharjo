@@ -14,10 +14,11 @@ class IncidentResource extends BaseResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'subject' => $this->subject,
-            'description' => $this->description,
-            'status' => $this->status,
+            'id'            => $this->id,
+            'subject'       => $this->subject,
+            'description'   => $this->description,
+            'status'        => $this->status,
+            'reporter_type' => $this->reporter_type,
             'reporter_email' => $this->reporter_email,
 
             // Loaded Relationships

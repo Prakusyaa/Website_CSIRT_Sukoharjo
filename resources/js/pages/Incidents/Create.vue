@@ -46,6 +46,7 @@ const form = useForm({
     description: '',
     category_id: '' as number | '',
     severity_id: '' as number | '',
+    reporter_type: 'internal' as 'internal' | 'external',
     reporter_id: '' as number | '',
     reporter_email: '',
     assigned_to: '' as number | '',
@@ -117,6 +118,7 @@ const removeFile = (index: number) => {
 
 // Watch mode closely purging the inactive field so rigid constraints never conflict remotely
 watch(reporterMode, (newMode) => {
+    form.reporter_type = newMode;
     if (newMode === 'internal') {
         form.reporter_email = '';
     } else {

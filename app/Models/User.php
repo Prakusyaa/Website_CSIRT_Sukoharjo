@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\RoleLevel;
+use App\Models\RememberToken;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -38,7 +39,6 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
     /**
@@ -137,6 +137,14 @@ class User extends Authenticatable
     public function createdAttachments(): HasMany
     {
         return $this->hasMany(Attachment::class, 'createdby');
+    }
+
+    /**
+     * Get the remember tokens for the user.
+     */
+    public function rememberTokens(): HasMany
+    {
+        return $this->hasMany(RememberToken::class);
     }
 
     /**

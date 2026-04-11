@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ResolveRememberToken;
 use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Services\AuthService;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -28,12 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->encryptCookies(except: ['appearance', 'sidebar_state', \App\Services\RememberTokenService::COOKIE_NAME]);
 
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            // Resolve remember-me tokens BEFORE the auth middleware checks sessions.
+            // This avoids the redirect loop caused by writing to users.remember_token.
+            ResolveRememberToken::class,
             // Silently log out any session belonging to a deactivated account on every web request
             EnsureUserIsActive::class,
         ]);

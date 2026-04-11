@@ -11,15 +11,23 @@ class AuthService
     /**
      * Attempt to authenticate a user by username or email + password.
      *
+     * NOTE: The $remember flag is intentionally NOT accepted here.
+     * Passing it to Auth::attempt() caused Laravel to write directly to
+     * users.remember_token, which conflicted with the session driver and
+     * produced redirect loops. Remember-me token issuance is now handled
+     * by RememberTokenService, called from SessionController after a
+     * successful authentication.
+     *
      * @throws ValidationException
      */
-    public function attempt(string $login, string $password, bool $remember = false): User
+    public function attempt(string $login, string $password): User
     {
         // Detect whether the input looks like an e-mail address
         $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
         $credentials = [$field => $login, 'password' => $password];
 
-        if (! Auth::attempt($credentials, $remember)) {
+        // Do NOT pass a remember flag — avoids writing to users.remember_token
+        if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
                 'login' => trans('auth.failed'),
             ]);

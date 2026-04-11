@@ -19,6 +19,7 @@ interface IncidentPayload {
     subject: string;
     description: string;
     status: string;
+    reporter_type: 'internal' | 'external';
     reporter_email: string | null;
     category?: { id: number; name: string };
     severity?: { id: number; name: string; level: number };
@@ -122,9 +123,10 @@ const confirmDelete = () => {
                 </div>
                 <div class="p-6">
                     <p class="text-sm">
-                        <span class="font-medium text-foreground">{{ incident.reporter?.name ?? '—' }}</span>
-                        <span v-if="incident.reporter_email" class="text-muted-foreground">
-                            · {{ incident.reporter_email }}
+                        <span class="font-medium text-foreground">
+                            {{ incident.reporter_type === 'internal'
+                                ? (incident.reporter?.name ?? '—')
+                                : (incident.reporter_email ?? '—') }}
                         </span>
                     </p>
                 </div>

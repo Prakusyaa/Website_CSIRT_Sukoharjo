@@ -16,11 +16,16 @@ class Report extends Model
         'description',
         'category_id',
         'severity_id',
+        'reporter_type',
         'reporter_id',
         'reporter_email',
         'assigned_to',
         'status',
         'created_by',
+    ];
+
+    protected $casts = [
+        'reporter_type' => 'string',
     ];
 
     /**

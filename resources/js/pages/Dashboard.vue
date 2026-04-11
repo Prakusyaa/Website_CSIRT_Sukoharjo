@@ -7,6 +7,15 @@ const page = usePage();
 const permissions = computed(() => page.props.auth.permissions);
 const user = computed(() => page.props.auth.user);
 
+const props = defineProps<{
+    stats: {
+        total_incidents: number;
+        open_incidents: number;
+        resolved_incidents: number;
+        critical_incidents: number;
+    }
+}>();
+
 const breadcrumbs = [
     {
         title: 'Dashboard',
@@ -14,36 +23,36 @@ const breadcrumbs = [
     },
 ];
 
-const cards = [
+const cards = computed(() => [
     {
         title: 'Total Incidents',
-        value: '---', // Placeholder for widget data
-        description: 'Last 30 days',
+        value: props.stats?.total_incidents ?? 0,
+        description: 'Total recorded reports',
         icon: FileText,
         colorClass: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',
     },
     {
-        title: 'Active Critical',
-        value: '---',
-        description: 'Requiring immediate triage',
-        icon: AlertOctagon,
-        colorClass: 'text-red-500 bg-red-50 dark:bg-red-900/20',
+        title: 'Open Investigations',
+        value: props.stats?.open_incidents ?? 0,
+        description: 'Assigned and pending',
+        icon: Activity,
+        colorClass: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
     },
     {
         title: 'Resolved Cases',
-        value: '---',
-        description: 'Compared to previous month',
+        value: props.stats?.resolved_incidents ?? 0,
+        description: 'Successfully resolved',
         icon: CheckCircle2,
         colorClass: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
     },
     {
-        title: 'Open Investigations',
-        value: '---',
-        description: 'Assigned to your team',
-        icon: Activity,
-        colorClass: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
+        title: 'Active Critical',
+        value: props.stats?.critical_incidents ?? 0,
+        description: 'Severity >= 60',
+        icon: AlertOctagon,
+        colorClass: 'text-red-500 bg-red-50 dark:bg-red-900/20',
     },
-];
+]);
 </script>
 
 <template>

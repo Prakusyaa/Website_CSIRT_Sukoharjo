@@ -35,6 +35,8 @@ const props = defineProps<{
         status?: string;
         sort?: string;
         direction?: string;
+        start_date?: string;
+        end_date?: string;
     };
 }>();
 
@@ -48,6 +50,20 @@ const search = ref(props.filters.search || '');
 const status = ref(props.filters.status || '');
 const sortField = ref(props.filters.sort || 'created_at');
 const sortDirection = ref(props.filters.direction || 'desc');
+const startDate = ref(props.filters.start_date || '');
+const endDate = ref(props.filters.end_date || '');
+
+// Date range validation error
+const dateError = ref('');
+
+const validateDates = (): boolean => {
+    dateError.value = '';
+    if (startDate.value && endDate.value && startDate.value > endDate.value) {
+        dateError.value = 'Start date must be on or before end date.';
+        return false;
+    }
+    return true;
+};
 
 // Vanilla JS Debounce helper for typing performance
 let searchTimeout: ReturnType<typeof setTimeout>;
@@ -56,11 +72,14 @@ watch([search, status], ([newSearch, newStatus]) => {
     clearTimeout(searchTimeout);
     
     searchTimeout = setTimeout(() => {
+        if (!validateDates()) return;
         router.get('/incidents', {
             search: newSearch,
             status: newStatus,
             sort: sortField.value,
             direction: sortDirection.value,
+            start_date: startDate.value || undefined,
+            end_date: endDate.value || undefined,
         }, {
             preserveState: true,
             replace: true,
@@ -68,6 +87,31 @@ watch([search, status], ([newSearch, newStatus]) => {
         });
     }, 300); // 300ms debounce
 });
+
+// Apply date filters (called on button press or Enter)
+const applyDateFilter = () => {
+    if (!validateDates()) return;
+    router.get('/incidents', {
+        search: search.value,
+        status: status.value,
+        sort: sortField.value,
+        direction: sortDirection.value,
+        start_date: startDate.value || undefined,
+        end_date: endDate.value || undefined,
+    }, {
+        preserveState: true,
+        replace: true,
+        preserveScroll: true,
+    });
+};
+
+// Clear date filters
+const clearDates = () => {
+    startDate.value = '';
+    endDate.value = '';
+    dateError.value = '';
+    applyDateFilter();
+};
 
 // Trigger sorting updates
 const toggleSort = (field: string) => {
@@ -83,6 +127,8 @@ const toggleSort = (field: string) => {
         status: status.value,
         sort: sortField.value,
         direction: sortDirection.value,
+        start_date: startDate.value || undefined,
+        end_date: endDate.value || undefined,
     }, {
         preserveState: true,
         replace: true,
@@ -125,29 +171,80 @@ const formatDate = (isoString?: string) => {
 
             <div class="rounded-xl border bg-card shadow-sm dark:border-gray-800">
                 <!-- Filters Bar -->
-                <div class="flex flex-col gap-4 border-b p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
-                    <div class="relative w-full max-w-sm">
-                        <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <input 
-                            v-model="search"
-                            type="text" 
-                            placeholder="Search subjects or reporters..." 
-                            class="w-full rounded-md border border-input bg-background py-2 pl-9 pr-4 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        />
+                <div class="flex flex-col gap-3 border-b p-4 dark:border-gray-800">
+                    <!-- Row 1: Search + Status -->
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="relative w-full max-w-sm">
+                            <Search class="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <input 
+                                v-model="search"
+                                type="text" 
+                                placeholder="Search subjects or reporters..." 
+                                class="w-full rounded-md border border-input bg-background py-2 pl-9 pr-4 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            />
+                        </div>
+                        <div class="flex w-full sm:w-auto items-center gap-2">
+                            <Filter class="h-4 w-4 text-muted-foreground" />
+                            <select v-model="status" class="w-full sm:w-48 rounded-md border border-input px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending Triage</option>
+                                <option value="validated">Validated</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed / Archived</option>
+                                <option value="rejected">Rejected (False Positive)</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="flex w-full sm:w-auto items-center gap-2">
-                        <Filter class="h-4 w-4 text-muted-foreground" />
-                        <select v-model="status" class="w-full sm:w-48 rounded-md border border-input px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring">
-                            <option value="">All Statuses</option>
-                            <option value="pending">Pending Triage</option>
-                            <option value="validated">Validated</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="resolved">Resolved</option>
-                            <option value="closed">Closed / Archived</option>
-                            <option value="rejected">Rejected (False Positive)</option>
-                        </select>
+
+                    <!-- Row 2: Date Range Filter -->
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div class="flex items-center gap-2 flex-1 flex-wrap sm:flex-nowrap">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <label for="start-date" class="whitespace-nowrap text-xs font-medium text-muted-foreground">From</label>
+                                <input
+                                    id="start-date"
+                                    v-model="startDate"
+                                    type="date"
+                                    :max="endDate || undefined"
+                                    @change="applyDateFilter"
+                                    class="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                    :class="dateError ? 'border-destructive focus-visible:ring-destructive' : ''"
+                                />
+                            </div>
+                            <div class="flex items-center gap-2 min-w-0">
+                                <label for="end-date" class="whitespace-nowrap text-xs font-medium text-muted-foreground">To</label>
+                                <input
+                                    id="end-date"
+                                    v-model="endDate"
+                                    type="date"
+                                    :min="startDate || undefined"
+                                    @change="applyDateFilter"
+                                    class="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                    :class="dateError ? 'border-destructive focus-visible:ring-destructive' : ''"
+                                />
+                            </div>
+                            <button
+                                v-if="startDate || endDate"
+                                type="button"
+                                @click="clearDates"
+                                class="whitespace-nowrap text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline transition-colors"
+                            >
+                                Clear dates
+                            </button>
+                        </div>
+                        <!-- Active date filter badge -->
+                        <div v-if="(startDate || endDate) && !dateError" class="flex items-center gap-1.5 text-xs text-primary font-medium">
+                            <span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5">
+                                {{ startDate && endDate ? `${startDate} → ${endDate}` : startDate ? `From ${startDate}` : `Until ${endDate}` }}
+                            </span>
+                        </div>
                     </div>
+
+                    <!-- Date validation error -->
+                    <p v-if="dateError" class="text-xs text-destructive">{{ dateError }}</p>
                 </div>
+
 
                 <!-- Data Table -->
                 <div class="relative w-full overflow-auto">
@@ -181,7 +278,7 @@ const formatDate = (isoString?: string) => {
                                         {{ incident.status.replace('_', ' ').toUpperCase() }}
                                     </span>
                                 </td>
-                                <td class="p-4 align-middle text-muted-foreground">{{ incident.reporter?.name || incident.reporter_email || 'System' }}</td>
+                                <td class="p-4 align-middle text-muted-foreground">{{ incident.reporter_type === 'internal' ? (incident.reporter?.name ?? '—') : (incident.reporter_email ?? '—') }}</td>
                                 <td class="p-4 align-middle">
                                     <span v-if="incident.severity" class="text-xs font-semibold">{{ incident.severity.name }}</span>
                                     <span v-else class="text-xs text-muted-foreground italic">Triage pending</span>

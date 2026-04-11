@@ -29,6 +29,7 @@ const props = defineProps<{
         subject: string;
         description: string;
         status: string;
+        reporter_type: 'internal' | 'external';
         reporter_email: string | null;
         category?: { id: number; name: string };
         severity?: { id: number; name: string; level: number };
@@ -241,15 +242,10 @@ const confirmDelete = () => {
                             <div>
                                 <dt class="text-xs font-medium text-muted-foreground">Reporter</dt>
                                 <dd class="text-sm font-medium">
-                                    {{ incident.reporter?.name ?? incident.reporter_email ?? '—' }}
+                                    {{ incident.reporter_type === 'internal'
+                                        ? (incident.reporter?.name ?? '—')
+                                        : (incident.reporter_email ?? '—') }}
                                 </dd>
-                            </div>
-                        </div>
-                        <div v-if="incident.reporter_email" class="flex gap-3">
-                            <Mail class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                            <div>
-                                <dt class="text-xs font-medium text-muted-foreground">Reporter email</dt>
-                                <dd class="text-sm font-medium">{{ incident.reporter_email }}</dd>
                             </div>
                         </div>
                         <div class="flex gap-3">

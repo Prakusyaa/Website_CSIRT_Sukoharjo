@@ -29,6 +29,15 @@ class IncidentService
             $query->where('status', $filters['status']);
         }
 
+        // Handle date range filtering on created_at (date-only, ignores time component)
+        if (! empty($filters['start_date'])) {
+            $query->whereDate('created_at', '>=', $filters['start_date']);
+        }
+
+        if (! empty($filters['end_date'])) {
+            $query->whereDate('created_at', '<=', $filters['end_date']);
+        }
+
         // Safe Sort Processing (whitelist sorting columns dynamically preventing injection!)
         $sortColumn = $filters['sort'] ?? 'created_at';
         $sortDirection = $filters['direction'] ?? 'desc';
@@ -59,9 +68,12 @@ class IncidentService
         $data['status'] = 'pending';
         $data['created_by'] = $creatorId;
 
-        // Auto-assign reporter_id if the creator acts as themselves making it
-        if (! isset($data['reporter_id']) && $creatorId) {
-            $data['reporter_id'] = $creatorId;
+        // Enforce mutual-exclusivity: null out the field that does not apply
+        // to the chosen reporter_type so the DB CHECK constraint is satisfied.
+        if (($data['reporter_type'] ?? null) === 'internal') {
+            $data['reporter_email'] = null;
+        } elseif (($data['reporter_type'] ?? null) === 'external') {
+            $data['reporter_id'] = null;
         }
 
         // Extract binary arrays effectively saving to disk later
@@ -99,6 +111,15 @@ class IncidentService
      */
     public function updateIncident(Report $incident, array $data): Report
     {
+        // If reporter_type is being changed, null out the unused field
+        if (isset($data['reporter_type'])) {
+            if ($data['reporter_type'] === 'internal') {
+                $data['reporter_email'] = null;
+            } elseif ($data['reporter_type'] === 'external') {
+                $data['reporter_id'] = null;
+            }
+        }
+
         $incident->update($data);
 
         return $incident;
