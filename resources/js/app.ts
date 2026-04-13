@@ -1,6 +1,5 @@
 import '../css/app.css';
 import { createInertiaApp, router } from '@inertiajs/vue3';
-import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 /**
@@ -46,5 +45,3 @@ createInertiaApp({
     },
 });
 
-// This will set light / dark mode on page load...
-initializeTheme();
