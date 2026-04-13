@@ -38,26 +38,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
 
     // Dashboard — accessible by all authenticated users
-    Route::get('/dashboard', function () {
-        $totalIncidents = \App\Models\Report::count();
-        $openIncidents = \App\Models\Report::whereIn('status', ['pending', 'validated', 'in_progress'])->count();
-        $resolvedIncidents = \App\Models\Report::where('status', 'resolved')->count();
-        $criticalIncidents = \App\Models\Report::whereIn('status', ['pending', 'validated', 'in_progress'])
-            ->whereHas('severity', function ($query) {
-                $query->where('level', '>=', 60);
-            })->count();
-
-        return Inertia::render('Dashboard', [
-            'stats' => [
-                'total_incidents' => $totalIncidents,
-                'open_incidents' => $openIncidents,
-                'resolved_incidents' => $resolvedIncidents,
-                'critical_incidents' => $criticalIncidents,
-            ]
-        ]);
-    })->name('dashboard');
-
-
+    Route::get('/dashboard', \App\Http\Controllers\DashboardController::class)->name('dashboard');
 
     // Incidents — Staff can view only; CSIRT+ can create/edit/delete
     // Incidents — Accessible by Staff; creation by CSIRT+

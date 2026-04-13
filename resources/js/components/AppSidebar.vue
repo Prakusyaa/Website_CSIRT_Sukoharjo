@@ -6,6 +6,7 @@ import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import ThemeToggle from '@/components/ThemeToggle.vue';
 import {
     Sidebar,
     SidebarContent,
@@ -79,7 +80,7 @@ const mainNavItems = computed(() => {
 const footerNavItems: NavItem[] = [
     {
         title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
+        href: '',
         icon: BookOpen,
     },
 ];
@@ -89,16 +90,19 @@ const footerNavItems: NavItem[] = [
     <Sidebar collapsible="icon" variant="inset" class="border-r shadow-sm">
         <SidebarHeader>
             <SidebarMenu>
-                <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child class="hover:bg-primary/5">
+                <SidebarMenuItem class="flex items-center justify-between w-full">
+                    <SidebarMenuButton size="lg" as-child class="hover:bg-primary/5 flex-1 w-auto">
                         <Link href="/dashboard" class="flex gap-3">
-                            <Shield class="text-primary h-6 w-6" />
-                            <div class="flex flex-col gap-0.5 mt-0.5 leading-none">
+                            <Shield class="text-primary h-6 w-6 shrink-0" />
+                            <div class="flex flex-col gap-0.5 mt-0.5 leading-none group-data-[collapsible=icon]:hidden">
                                 <span class="font-bold text-base tracking-tight text-primary">CSIRT</span>
                                 <span class="text-[10px] tracking-widest uppercase font-semibold text-muted-foreground">Internal System</span>
                             </div>
                         </Link>
                     </SidebarMenuButton>
+                    <div class="group-data-[collapsible=icon]:hidden shrink-0 pr-1">
+                        <ThemeToggle />
+                    </div>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarHeader>

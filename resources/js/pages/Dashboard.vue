@@ -13,6 +13,8 @@ const props = defineProps<{
         open_incidents: number;
         resolved_incidents: number;
         critical_incidents: number;
+        incidents_last_7_days: number;
+        incidents_by_category: { category: string; total: number }[];
     }
 }>();
 
@@ -90,34 +92,43 @@ const cards = computed(() => [
             <!-- Middle Main Grids -->
             <div class="grid flex-1 gap-6 lg:grid-cols-3">
                 
-                <!-- Left Chart Area -->
+                <!-- Left Details Area -->
                 <div class="col-span-1 lg:col-span-2 rounded-xl border bg-card shadow-sm">
                     <div class="flex h-full flex-col p-6">
                         <div class="mb-4 flex items-center justify-between">
-                            <h3 class="font-semibold tracking-tight">Incident Trends</h3>
+                            <h3 class="font-semibold tracking-tight">Incidents by Category</h3>
                         </div>
-                        <!-- Chart Placeholder Widget -->
-                        <div class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50">
-                            <div class="flex flex-col items-center gap-2 text-center">
-                                <Activity class="h-8 w-8 text-gray-400 opacity-50" />
-                                <p class="text-sm text-gray-500">Trend chart widget area pending final data bindings</p>
+                        <!-- Categories Widget -->
+                        <div v-if="stats.incidents_by_category?.length" class="flex flex-col gap-4">
+                            <div v-for="cat in stats.incidents_by_category" :key="cat.category" class="flex flex-col gap-1">
+                                <div class="flex justify-between text-sm">
+                                    <span class="font-medium">{{ cat.category }}</span>
+                                    <span class="text-muted-foreground">{{ cat.total }}</span>
+                                </div>
+                                <div class="w-full rounded-full bg-secondary h-2">
+                                    <div class="bg-primary h-2 rounded-full" :style="{ width: `${Math.max(5, (cat.total / stats.total_incidents) * 100)}%` }"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50">
+                            <div class="flex flex-col items-center gap-2 text-center p-4">
+                                <FileText class="h-8 w-8 text-gray-400 opacity-50" />
+                                <p class="text-sm text-gray-500">No active reports yet</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Recent Activity Feed -->
+                <!-- Right Recent Widget -->
                 <div class="col-span-1 rounded-xl border bg-card shadow-sm">
                     <div class="flex h-full flex-col p-6">
                         <div class="mb-4 flex items-center justify-between">
                             <h3 class="font-semibold tracking-tight">Recent Activity</h3>
                         </div>
-                        <!-- Activity Feed Placeholder -->
-                        <div class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50">
-                            <div class="flex flex-col items-center gap-2 text-center p-4">
-                                <FileText class="h-8 w-8 text-gray-400 opacity-50" />
-                                <p class="text-sm text-gray-500">Activity stream layout ready</p>
-                            </div>
+                        <!-- Activity Feed Widget -->
+                        <div class="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50 p-6">
+                            <h4 class="text-[4rem] font-bold tracking-tighter text-primary leading-none">{{ stats.incidents_last_7_days }}</h4>
+                            <p class="mt-2 text-sm text-muted-foreground text-center font-medium">Reports recorded<br/>in the last 7 days</p>
                         </div>
                     </div>
                 </div>
