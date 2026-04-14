@@ -80,7 +80,7 @@ const mainNavItems = computed(() => {
 const footerNavItems: NavItem[] = [
     {
         title: 'Documentation',
-        href: '',
+        href: 'https://github.com/Prakusyaa/Website_CSIRT_Sukoharjo/blob/main/README.md',
         icon: BookOpen,
     },
 ];

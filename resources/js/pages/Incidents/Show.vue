@@ -15,6 +15,7 @@ import {
     User,
     Users,
 } from 'lucide-vue-next';
+import ConfirmModal from '@/components/ui/ConfirmModal.vue';
 
 interface AttachmentRow {
     id: number;
@@ -82,19 +83,18 @@ const downloadUrl = (attachmentId: number) =>
     `/incidents/${props.incident.id}/attachments/${attachmentId}/download`;
 
 const deleting = ref(false);
+const showDeleteConfirm = ref(false);
 
 const confirmDelete = () => {
-    if (
-        !confirm(
-            'Archive this incident? It will be hidden from the directory but can be restored in the database if needed.',
-        )
-    ) {
-        return;
-    }
+    showDeleteConfirm.value = true;
+};
+
+const executeDelete = () => {
     deleting.value = true;
     router.delete(`/incidents/${props.incident.id}`, {
         onFinish: () => {
             deleting.value = false;
+            showDeleteConfirm.value = false;
         },
     });
 };
@@ -289,4 +289,15 @@ const confirmDelete = () => {
             </div>
         </div>
     </div>
+
+    <ConfirmModal
+        v-model:open="showDeleteConfirm"
+        title="Archive incident"
+        description="Archive this incident? It will be hidden from the directory but can be restored in the database if needed."
+        confirmText="Archive incident"
+        cancelText="Cancel"
+        danger
+        :loading="deleting"
+        @confirm="executeDelete"
+    />
 </template>

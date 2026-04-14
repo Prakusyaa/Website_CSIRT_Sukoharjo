@@ -21,7 +21,8 @@ class RoleController extends Controller
     public function index(Request $request): Response
     {
 
-        $roles = Role::withCount('users')
+        $roles = Role::select(['id', 'name', 'level', 'created_at'])
+            ->withCount('users')
             ->orderBy('level', 'asc')
             ->paginate(20);
 
@@ -31,13 +32,7 @@ class RoleController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
-    {
 
-        return Inertia::render('Admin/Roles/Create', [
-            'protectedLevels' => self::PROTECTED_LEVELS,
-        ]);
-    }
 
     public function store(Request $request): RedirectResponse
     {
@@ -69,19 +64,7 @@ class RoleController extends Controller
         return redirect()->route('admin.roles.index')->with('success', 'Role created successfully.');
     }
 
-    public function edit(Request $request, Role $role): Response|RedirectResponse
-    {
 
-        if (in_array($role->level, self::PROTECTED_LEVELS)) {
-            return redirect()->route('admin.roles.index')
-                ->withErrors(['error' => "The \"{$role->name}\" role is a core system role and cannot be edited."]);
-        }
-
-        return Inertia::render('Admin/Roles/Edit', [
-            'role' => $role,
-            'protectedLevels' => self::PROTECTED_LEVELS,
-        ]);
-    }
 
     public function update(Request $request, Role $role): RedirectResponse
     {

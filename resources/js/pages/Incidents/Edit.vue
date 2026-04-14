@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { AlertCircle, Briefcase, Loader2, Shield, Trash2, User } from 'lucide-vue-next';
+import ConfirmModal from '@/components/ui/ConfirmModal.vue';
 
 interface Category {
     id: number;
@@ -37,6 +39,7 @@ const props = defineProps<{
 const page = usePage();
 const permissions = computed(() => page.props.auth.permissions);
 const deleting = ref(false);
+const showDeleteConfirm = ref(false);
 
 const form = useForm({
     subject: props.incident.subject,
@@ -79,17 +82,15 @@ const submit = () => {
 };
 
 const confirmDelete = () => {
-    if (
-        !confirm(
-            'Archive this incident? It will be removed from the directory but can be restored in the database if needed.',
-        )
-    ) {
-        return;
-    }
+    showDeleteConfirm.value = true;
+};
+
+const executeDelete = () => {
     deleting.value = true;
     router.delete(`/incidents/${props.incident.id}`, {
         onFinish: () => {
             deleting.value = false;
+            showDeleteConfirm.value = false;
         },
     });
 };
@@ -278,4 +279,15 @@ const confirmDelete = () => {
             </div>
         </form>
     </div>
+
+    <ConfirmModal
+        v-model:open="showDeleteConfirm"
+        title="Archive incident"
+        description="Archive this incident? It will be removed from the directory but can be restored in the database if needed."
+        confirmText="Archive incident"
+        cancelText="Cancel"
+        danger
+        :loading="deleting"
+        @confirm="executeDelete"
+    />
 </template>

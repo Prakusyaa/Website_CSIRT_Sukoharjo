@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 
 import { Tags, Plus, Pencil, Trash2, CheckCircle2, ShieldAlert } from 'lucide-vue-next';
 import { ref } from 'vue';
+import ConfirmModal from '@/components/ui/ConfirmModal.vue';
 
 interface Category {
     id: number;
@@ -29,8 +30,8 @@ const categoryEdit = useForm({ name: '' });
 const editingSeverityId = ref<number | null>(null);
 const severityEdit = useForm({ name: '', level: 0 as number });
 
-const confirmingDeleteCategory = ref<number | null>(null);
-const confirmingDeleteSeverity = ref<number | null>(null);
+const confirmingDeleteCategory = ref<Category | null>(null);
+const confirmingDeleteSeverity = ref<Severity | null>(null);
 
 const deleteCategoryForm = useForm({});
 const deleteSeverityForm = useForm({});
@@ -95,8 +96,9 @@ const submitSeverityCreate = () => {
     });
 };
 
-const performDeleteCategory = (id: number) => {
-    deleteCategoryForm.delete(`/admin/categories/${id}`, {
+const performDeleteCategory = () => {
+    if (!confirmingDeleteCategory.value) return;
+    deleteCategoryForm.delete(`/admin/categories/${confirmingDeleteCategory.value.id}`, {
         preserveScroll: true,
         onFinish: () => {
             confirmingDeleteCategory.value = null;
@@ -104,8 +106,9 @@ const performDeleteCategory = (id: number) => {
     });
 };
 
-const performDeleteSeverity = (id: number) => {
-    deleteSeverityForm.delete(`/admin/severities/${id}`, {
+const performDeleteSeverity = () => {
+    if (!confirmingDeleteSeverity.value) return;
+    deleteSeverityForm.delete(`/admin/severities/${confirmingDeleteSeverity.value.id}`, {
         preserveScroll: true,
         onFinish: () => {
             confirmingDeleteSeverity.value = null;
@@ -217,7 +220,7 @@ const performDeleteSeverity = (id: number) => {
                                             type="button"
                                             class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground hover:bg-muted hover:text-destructive"
                                             title="Delete"
-                                            @click="confirmingDeleteCategory = c.id"
+                                            @click="confirmingDeleteCategory = c"
                                         >
                                             <Trash2 class="h-4 w-4" />
                                         </button>
@@ -228,28 +231,7 @@ const performDeleteSeverity = (id: number) => {
                     </table>
                 </div>
 
-                <div
-                    v-if="confirmingDeleteCategory !== null"
-                    class="border-t bg-muted/20 px-4 py-3 text-sm dark:border-gray-800"
-                >
-                    <p class="mb-2 text-muted-foreground">Delete this category?</p>
-                    <div class="flex gap-2">
-                        <button
-                            type="button"
-                            class="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-                            @click="confirmingDeleteCategory = null"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            class="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/90"
-                            @click="performDeleteCategory(confirmingDeleteCategory!)"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
+
             </div>
 
             <!-- Severities -->
@@ -361,7 +343,7 @@ const performDeleteSeverity = (id: number) => {
                                             type="button"
                                             class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground hover:bg-muted hover:text-destructive"
                                             title="Delete"
-                                            @click="confirmingDeleteSeverity = s.id"
+                                            @click="confirmingDeleteSeverity = s"
                                         >
                                             <Trash2 class="h-4 w-4" />
                                         </button>
@@ -372,29 +354,33 @@ const performDeleteSeverity = (id: number) => {
                     </table>
                 </div>
 
-                <div
-                    v-if="confirmingDeleteSeverity !== null"
-                    class="border-t bg-muted/20 px-4 py-3 text-sm dark:border-gray-800"
-                >
-                    <p class="mb-2 text-muted-foreground">Delete this severity?</p>
-                    <div class="flex gap-2">
-                        <button
-                            type="button"
-                            class="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-                            @click="confirmingDeleteSeverity = null"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            class="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/90"
-                            @click="performDeleteSeverity(confirmingDeleteSeverity!)"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
+
+    <ConfirmModal
+        :open="!!confirmingDeleteCategory"
+        @update:open="val => { if (!val) confirmingDeleteCategory = null }"
+        title="Delete Category"
+        :description="`Are you sure you want to delete the category '${confirmingDeleteCategory?.name}'?`"
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger
+        :loading="deleteCategoryForm.processing"
+        @confirm="performDeleteCategory"
+        @cancel="confirmingDeleteCategory = null"
+    />
+
+    <ConfirmModal
+        :open="!!confirmingDeleteSeverity"
+        @update:open="val => { if (!val) confirmingDeleteSeverity = null }"
+        title="Delete Severity"
+        :description="`Are you sure you want to delete the severity '${confirmingDeleteSeverity?.name}'?`"
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger
+        :loading="deleteSeverityForm.processing"
+        @confirm="performDeleteSeverity"
+        @cancel="confirmingDeleteSeverity = null"
+    />
 </template>

@@ -82,11 +82,9 @@ Route::middleware(['auth'])->group(function () {
             'update' => 'admin.users.update',
             'destroy' => 'admin.users.destroy',
         ]);
-        Route::resource('admin/roles', RoleController::class)->except(['show'])->names([
+        Route::resource('admin/roles', RoleController::class)->except(['show', 'create', 'edit'])->names([
             'index' => 'admin.roles.index',
-            'create' => 'admin.roles.create',
             'store' => 'admin.roles.store',
-            'edit' => 'admin.roles.edit',
             'update' => 'admin.roles.update',
             'destroy' => 'admin.roles.destroy',
         ]);
