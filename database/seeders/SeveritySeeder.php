@@ -18,7 +18,7 @@ class SeveritySeeder extends Seeder
             ['id' => 1, 'name' => 'Low', 'level' => 10],
             ['id' => 2, 'name' => 'Medium', 'level' => 30],
             ['id' => 3, 'name' => 'High', 'level' => 60],
-            // ['id' => 4, 'name' => 'Critical', 'level' => 100],
+            ['id' => 4, 'name' => 'Critical', 'level' => 100],
         ];
 
         foreach ($severities as $severity) {

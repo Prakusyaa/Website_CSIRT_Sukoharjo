@@ -21,7 +21,7 @@ class CategorySeeder extends Seeder
             ['id' => 4, 'name' => 'Data Breach'],
             ['id' => 5, 'name' => 'Vulnerability'],
             ['id' => 6, 'name' => 'DDoS'],
-            // ['id' => 7, 'name' => 'Insider Threat'],
+            ['id' => 7, 'name' => 'Insider Threat'],
         ];
 
         foreach ($categories as $category) {
