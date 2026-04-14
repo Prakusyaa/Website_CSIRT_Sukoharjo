@@ -48,10 +48,31 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::prefix('incidents')->name('api.incidents.')->group(function () {
 
-        Route::get('/', function (Request $request) {
+        Route::get('/', function () {
             Gate::authorize('viewAny', Report::class);
 
-            $incidents = Report::with(['category', 'severity', 'reporter', 'assignedUser'])
+            $incidents = Report::query()
+                ->select([
+                    'id',
+                    'subject',
+                    'description',
+                    'status',
+                    'reporter_type',
+                    'reporter_email',
+                    'category_id',
+                    'severity_id',
+                    'reporter_id',
+                    'assigned_to',
+                    'created_by',
+                    'created_at',
+                    'updated_at',
+                ])
+                ->with([
+                    'category:id,name',
+                    'severity:id,name,level',
+                    'reporter:id,name,username',
+                    'assignedUser:id,name',
+                ])
                 ->orderBy('created_at', 'desc')
                 ->paginate(15);
 
@@ -61,7 +82,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{incident}', function (Report $incident) {
             Gate::authorize('view', $incident);
 
-            $incident->load(['category', 'severity', 'reporter', 'assignedUser', 'creator', 'attachments']);
+            $incident->load([
+                'category:id,name',
+                'severity:id,name,level',
+                'reporter:id,name,username',
+                'assignedUser:id,name',
+                'creator:id,name',
+                'attachments:id,report_id,file_name,file_type,file_size',
+            ]);
 
             return ApiResponse::success(new IncidentResource($incident));
         })->name('show');
@@ -78,14 +106,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('api.admin')->group(function () {
 
         // Users
-        Route::get('/admin/users', function (Request $request) {
-            $users = User::with('role')->orderBy('id')->paginate(20);
+        Route::get('/admin/users', function () {
+            $users = User::query()
+                ->select(['id', 'name', 'username', 'email', 'is_active', 'role_id', 'created_at', 'updated_at'])
+                ->with('role:id,name,level')
+                ->orderBy('id')
+                ->paginate(20);
 
             return ApiResponse::paginated(UserResource::collection($users));
         })->name('api.admin.users.index');
 
         Route::get('/admin/users/{user}', function (User $user) {
-            return ApiResponse::success(new UserResource($user->load('role')));
+            return ApiResponse::success(new UserResource($user->load('role:id,name,level')));
         })->name('api.admin.users.show');
 
         // Roles
@@ -103,7 +135,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Audit Logs (read-only via API)
         Route::get('/admin/audit-logs', function () {
-            $logs = AuditLog::with('user:id,name,email')->orderBy('id', 'desc')->paginate(20);
+            $logs = AuditLog::query()
+                ->select(['id', 'action', 'table_name', 'record_id', 'changes', 'user_id', 'created_at'])
+                ->with('user:id,name,email')
+                ->orderBy('id', 'desc')
+                ->paginate(20);
 
             return ApiResponse::paginated(AuditLogResource::collection($logs));
         })->name('api.admin.audit-logs.index');

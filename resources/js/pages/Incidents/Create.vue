@@ -32,11 +32,6 @@ const page = usePage();
 const permissions = computed(() => page.props.auth.permissions);
 const currentUser = computed(() => page.props.auth.user);
 
-const breadcrumbs = [
-    { title: 'Incidents', href: '/incidents' },
-    { title: 'Log Incident', href: '/incidents/create' },
-];
-
 // Reporter Mode tracking natively
 const reporterMode = ref<'internal' | 'external'>('internal');
 

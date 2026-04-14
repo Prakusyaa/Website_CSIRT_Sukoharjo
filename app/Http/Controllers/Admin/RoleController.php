@@ -101,9 +101,11 @@ class RoleController extends Controller
         }
 
         // Prevent deletion if users are currently assigned to this role
-        if ($role->users()->count() > 0) {
+        $assignedUsersCount = $role->users()->count();
+
+        if ($assignedUsersCount > 0) {
             return back()->withErrors([
-                'error' => "Cannot delete \"{$role->name}\" — {$role->users()->count()} user(s) are currently assigned to it. Reassign them first.",
+                'error' => "Cannot delete \"{$role->name}\" — {$assignedUsersCount} user(s) are currently assigned to it. Reassign them first.",
             ]);
         }
 

@@ -15,7 +15,7 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(): Response
     {
         $users = User::with('role')->orderBy('id', 'desc')->paginate(15);
 
@@ -24,7 +24,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(): Response
     {
         return Inertia::render('Admin/Users/Create', [
             'roles' => app(ReferenceDataService::class)->getRoles(),
@@ -61,7 +61,7 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User account successfully provisioned.');
     }
 
-    public function edit(Request $request, User $user): Response
+    public function edit(User $user): Response
     {
         return Inertia::render('Admin/Users/Edit', [
             'user' => $user,

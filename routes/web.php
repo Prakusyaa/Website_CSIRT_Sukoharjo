@@ -10,7 +10,6 @@ use App\Http\Controllers\IncidentController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 // Root: redirect authenticated users based on role, guests to login
 Route::get('/', function () {

@@ -40,11 +40,6 @@ const props = defineProps<{
     };
 }>();
 
-// Breadcrumbs
-const breadcrumbs = [
-    { title: 'Incidents', href: '/incidents' },
-];
-
 // Reactive states hydrated from Inertia response
 const search = ref(props.filters.search || '');
 const status = ref(props.filters.status || '');
@@ -68,29 +63,7 @@ const validateDates = (): boolean => {
 // Vanilla JS Debounce helper for typing performance
 let searchTimeout: ReturnType<typeof setTimeout>;
 
-watch([search, status], ([newSearch, newStatus]) => {
-    clearTimeout(searchTimeout);
-    
-    searchTimeout = setTimeout(() => {
-        if (!validateDates()) return;
-        router.get('/incidents', {
-            search: newSearch,
-            status: newStatus,
-            sort: sortField.value,
-            direction: sortDirection.value,
-            start_date: startDate.value || undefined,
-            end_date: endDate.value || undefined,
-        }, {
-            preserveState: true,
-            replace: true,
-            preserveScroll: true
-        });
-    }, 300); // 300ms debounce
-});
-
-// Apply date filters (called on button press or Enter)
-const applyDateFilter = () => {
-    if (!validateDates()) return;
+const applyFilters = () => {
     router.get('/incidents', {
         search: search.value,
         status: status.value,
@@ -103,6 +76,21 @@ const applyDateFilter = () => {
         replace: true,
         preserveScroll: true,
     });
+};
+
+watch([search, status], () => {
+    clearTimeout(searchTimeout);
+    
+    searchTimeout = setTimeout(() => {
+        if (!validateDates()) return;
+        applyFilters();
+    }, 300); // 300ms debounce
+});
+
+// Apply date filters (called on button press or Enter)
+const applyDateFilter = () => {
+    if (!validateDates()) return;
+    applyFilters();
 };
 
 // Clear date filters
@@ -122,18 +110,7 @@ const toggleSort = (field: string) => {
         sortDirection.value = 'asc';
     }
 
-    router.get('/incidents', {
-        search: search.value,
-        status: status.value,
-        sort: sortField.value,
-        direction: sortDirection.value,
-        start_date: startDate.value || undefined,
-        end_date: endDate.value || undefined,
-    }, {
-        preserveState: true,
-        replace: true,
-        preserveScroll: true
-    });
+    applyFilters();
 };
 
 // Styling helpers
@@ -148,7 +125,8 @@ const statusColors: Record<string, string> = {
 
 const formatDate = (isoString?: string) => {
     if (!isoString) return '--';
-    return new Date(isoString).toLocaleDateString() + ' ' + new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const date = new Date(isoString);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 };
 </script>
 

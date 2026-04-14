@@ -10,8 +10,8 @@ export default defineConfig({
         host: '0.0.0.0',
         cors: true,
         hmr: {
-            host: 'localhost',
-            // host: '192.168.137.119',
+            // host: 'localhost',
+            host: '192.168.137.119',
         },
     },
     plugins: [

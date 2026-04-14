@@ -44,19 +44,8 @@ class IncidentController extends Controller
     {
         $this->authorize('create', Report::class);
 
-        // Load directly from the database (not ReferenceDataService cache) so form
-        // dropdowns stay correct after seeding; stale empty cache was hiding rows.
         return Inertia::render('Incidents/Create', [
-            'categories' => Category::query()
-                ->select('id', 'name')
-                ->orderBy('name')
-                ->get(),
-            'severities' => Severity::query()
-                ->select('id', 'name', 'level')
-                ->orderBy('level')
-                ->get(),
-            'users' => User::active()->select('id', 'name', 'email')->get(),
-            'csirtUsers' => User::active()->csirt()->select('id', 'name')->get(),
+            ...$this->incidentFormOptions(),
         ]);
     }
 
@@ -100,15 +89,7 @@ class IncidentController extends Controller
 
         return Inertia::render('Incidents/Edit', [
             'incident' => (new IncidentResource($incident))->resolve(request()),
-            'categories' => Category::query()
-                ->select('id', 'name')
-                ->orderBy('name')
-                ->get(),
-            'severities' => Severity::query()
-                ->select('id', 'name', 'level')
-                ->orderBy('level')
-                ->get(),
-            'csirtUsers' => User::active()->csirt()->select('id', 'name')->get(),
+            ...$this->incidentFormOptions(includeUsers: false),
         ]);
     }
 
@@ -139,5 +120,31 @@ class IncidentController extends Controller
 
         return redirect()->route('incidents.index')
             ->with('success', 'Incident deleted/archived successfully.');
+    }
+
+    /**
+     * Shared option payload for incident create/edit forms.
+     *
+     * @return array<string, mixed>
+     */
+    private function incidentFormOptions(bool $includeUsers = true): array
+    {
+        $options = [
+            'categories' => Category::query()
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get(),
+            'severities' => Severity::query()
+                ->select('id', 'name', 'level')
+                ->orderBy('level')
+                ->get(),
+            'csirtUsers' => User::active()->csirt()->select('id', 'name')->get(),
+        ];
+
+        if ($includeUsers) {
+            $options['users'] = User::active()->select('id', 'name', 'email')->get();
+        }
+
+        return $options;
     }
 }
